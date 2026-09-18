@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Caches and testing
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# macOS system files
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Internal scratch and agent directories
+.agents/
+.project_provenance.json
+.user_uploaded/
+
+# Local data and media
+transcripts/
+uploads/
+outbox/
+*.sqlite
+*.sqlite3
+*.db
+*.jsonl
+*.log
+
+# Audio/Video temporary files
+*.wav
+*.mp3
+*.m4a
+*.mp4
+*.mov
+*.mkv
+*.flac
+*.aac
+*.webm

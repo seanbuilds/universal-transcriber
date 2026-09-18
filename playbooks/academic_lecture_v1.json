@@ -1,0 +1,24 @@
+{
+  "name": "academic_lecture",
+  "version": "v1",
+  "description": "University lectures, conference presentations, and technical keynotes",
+  "default_role": "Lecturer",
+  "roles": ["Lecturer", "Student", "Audience Member"],
+  "cues": {
+    "lecturer": [
+      "welcome everyone",
+      "in today's lecture",
+      "as we discussed last time",
+      "on this slide",
+      "moving on to",
+      "in summary",
+      "are there any questions"
+    ],
+    "student": [
+      "quick question",
+      "could you clarify",
+      "what about",
+      "professor"
+    ]
+  }
+}

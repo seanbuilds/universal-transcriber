@@ -1,0 +1,26 @@
+{
+  "name": "corporate_meeting",
+  "version": "v1",
+  "description": "Team standups, board reviews, strategy syncs, and cross-functional roundtables",
+  "default_role": "Team Member",
+  "roles": ["Meeting Leader", "Presenter", "Team Member"],
+  "cues": {
+    "meeting_leader": [
+      "let's kick off",
+      "let's get started",
+      "agenda for today",
+      "let's jump in",
+      "action items",
+      "next steps",
+      "any blockers",
+      "wrapping up"
+    ],
+    "contributor": [
+      "from our team",
+      "quick update from my end",
+      "i can take that",
+      "shipping this week",
+      "status is green"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "general_speech",
+  "version": "v1",
+  "description": "General domain-agnostic audio transcription and turn coalescing",
+  "default_role": "Speaker",
+  "roles": ["Speaker"],
+  "cues": {}
+}

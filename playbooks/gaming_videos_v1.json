@@ -1,0 +1,60 @@
+{
+  "name": "gaming_videos",
+  "version": "v1",
+  "description": "Gaming content, Let's Plays, esports shoutcasting, multiplayer squad banter, speedruns, and livestream commentary",
+  "default_role": "Player",
+  "roles": [
+    "Streamer",
+    "Teammate",
+    "Opponent",
+    "Caster",
+    "System"
+  ],
+  "cues": {
+    "streamer": [
+      "what's up chat",
+      "welcome back to the stream",
+      "don't forget to like and subscribe",
+      "let's jump right in",
+      "thanks for the sub",
+      "thanks for the follow",
+      "good game",
+      "clip that",
+      "we take those",
+      "let's go"
+    ],
+    "teammate": [
+      "on my mark",
+      "on my ping",
+      "push with me",
+      "need backup",
+      "revive me",
+      "cover me",
+      "he's one shot",
+      "low hp",
+      "rotating",
+      "flanking",
+      "drop me ammo",
+      "i got your back",
+      "nice clutch"
+    ],
+    "caster": [
+      "welcome to the match",
+      "what an insane play",
+      "the ultimate is ready",
+      "taking down the objective",
+      "secured the round",
+      "unbelievable reaction time",
+      "the defense holds"
+    ],
+    "system": [
+      "round one",
+      "round two",
+      "victory",
+      "defeat",
+      "match point",
+      "overtime",
+      "zone shrinking"
+    ]
+  }
+}

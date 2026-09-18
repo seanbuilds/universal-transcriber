@@ -1,0 +1,28 @@
+{
+  "name": "interview_podcast",
+  "version": "v1",
+  "description": "1-on-1 and panel interviews, podcasts, journalistic conversations, and Q&A shows",
+  "default_role": "Host",
+  "roles": ["Host", "Co-Host", "Guest"],
+  "cues": {
+    "host": [
+      "welcome to",
+      "welcome back",
+      "my guest today",
+      "joining me is",
+      "excited to have",
+      "thanks for coming on",
+      "let me ask you",
+      "before we wrap up",
+      "where can people find you"
+    ],
+    "guest": [
+      "thanks for having me",
+      "great to be here",
+      "excited to be here",
+      "that's a great question",
+      "to give some background",
+      "in my experience"
+    ]
+  }
+}

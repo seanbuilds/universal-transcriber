@@ -1,0 +1,58 @@
+{
+  "name": "municipal_meetings",
+  "version": "v1",
+  "description": "Town Select Boards, School Committees, City Councils, and Planning Boards",
+  "default_role": "Committee Member",
+  "roles": ["Chair", "Vice Chair", "Superintendent", "Town Manager", "Committee Member", "Public Speaker"],
+  "cues": {
+    "chair": [
+      "call this meeting to order",
+      "open this meeting",
+      "quorum of committee members",
+      "virtual meeting",
+      "roll call",
+      "public comment",
+      "turn the floor over to",
+      "look for a motion",
+      "take a motion",
+      "motion by",
+      "do i have a second",
+      "roll call vote",
+      "motion to adjourn",
+      "next thing on the agenda"
+    ],
+    "superintendent_or_manager": [
+      "superintendent report",
+      "director of finance",
+      "working with the town",
+      "district update",
+      "town manager report"
+    ],
+    "member_motion": [
+      "so moved",
+      "motion to approve",
+      "i move to",
+      "second",
+      "present",
+      "aye",
+      "thank you mr. chair",
+      "thank you madam chair"
+    ]
+  },
+  "default_roster": [
+    "Chair Corey Evans",
+    "Jennifer Lesky",
+    "Craig MacLellan",
+    "Lance C. Dial",
+    "Doran Hull",
+    "Paul Kearney",
+    "Dr. Sarah Shannon",
+    "Dr. Leslie Scollins",
+    "Dr. Beth Wilcox",
+    "Chair Jack Creighton",
+    "Paul Schubert",
+    "David Farrag",
+    "Chris Plecs",
+    "Ellen Maher"
+  ]
+}
