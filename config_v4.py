@@ -49,14 +49,17 @@ RECOMMENDED_THREADS = max(4, min(CPU_COUNT - 2, 10))  # Apple Silicon performanc
 
 # Default Whisper Model Candidates (ordered by preference)
 WHISPER_MODEL_CANDIDATES = [
+    CACHE_DIR / "models/ggml-small.en.bin",
+    CACHE_DIR / "models/ggml-base.en.bin",
+    CACHE_DIR / "models/ggml-small.en-q5_1.bin",
+    CACHE_DIR / "models/ggml-medium.en.bin",
     Path.home() / "COUNCIL/models/ggml-small.en-q5_1.bin",
     Path.home() / "COUNCIL/models/ggml-medium.en-q5_0.bin",
-    CACHE_DIR / "models/ggml-small.en-q5_1.bin",
-    Path.home() / "models/ggml-small.en-q5_1.bin",
-    Path.home() / "models/ggml-medium.en-q5_0.bin",
+    Path.home() / "models/ggml-small.en.bin",
+    Path.home() / "models/ggml-base.en.bin",
     Path.home() / ".cache/whisper/ggml-small.en.bin",
     Path("/opt/homebrew/share/whisper-cpp/models/ggml-small.en.bin"),
-    Path("/opt/homebrew/share/whisper-cpp/models/ggml-medium.en.bin"),
+    Path("/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin"),
 ]
 
 # Web Server & Telemetry Settings

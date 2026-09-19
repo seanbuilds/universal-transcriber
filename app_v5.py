@@ -199,6 +199,33 @@ def upload_file():
     })
 
 
+@app.route("/api/jobs", methods=["GET"])
+def get_jobs():
+    """List recent background jobs."""
+    limit = int(request.args.get("limit", 20))
+    return jsonify(job_queue.list_jobs(limit=limit))
+
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def get_job_status(job_id):
+    """Get status of a specific background job from queue or audit trail."""
+    job = job_queue.get_job(job_id)
+    if not job:
+        audit_entry = audit_logger.get_job(job_id)
+        if audit_entry:
+            job = {
+                "job_id": job_id,
+                "status": audit_entry.get("status", "").lower(),
+                "error_message": audit_entry.get("error_message"),
+                "stage_message": audit_entry.get("error_message") or audit_entry.get("status"),
+                "result": audit_entry if audit_entry.get("status") == "COMPLETED" else None,
+                "progress_pct": 100 if audit_entry.get("status") == "COMPLETED" else 0,
+            }
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
+
+
 @app.route("/api/jobs/<job_id>/cancel", methods=["POST"])
 def cancel_job(job_id):
     """Cancel a running or pending job and record cancellation in the audit trail."""

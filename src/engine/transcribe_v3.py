@@ -45,11 +45,60 @@ class WhisperTranscriberV3:
 
     @staticmethod
     def find_best_model() -> Optional[Path]:
-        """Search standard macOS paths for pre-downloaded ggml Whisper models."""
+        """Search standard macOS paths for pre-downloaded ggml Whisper models, or auto-download."""
+        # 1. Check cache directory models first
+        models_dir = Path.home() / ".cache" / "universal_transcriber" / "models"
+        if models_dir.exists():
+            for m in [
+                "ggml-small.en.bin",
+                "ggml-base.en.bin",
+                "ggml-medium.en.bin",
+                "ggml-small.en-q5_1.bin",
+                "ggml-tiny.en.bin",
+            ]:
+                cand = models_dir / m
+                if cand.exists() and cand.is_file() and cand.stat().st_size > 10_000_000:
+                    return cand
+
+            for p in sorted(models_dir.glob("*.bin")):
+                if p.is_file() and p.stat().st_size > 10_000_000:
+                    return p
+
+        # 2. Check explicit candidate paths
         for candidate in WHISPER_MODEL_CANDIDATES:
             p = Path(candidate).expanduser().resolve()
-            if p.exists() and p.is_file():
+            if p.exists() and p.is_file() and p.stat().st_size > 10_000_000:
                 return p
+
+        # 3. Check whisper.cpp share directory in homebrew
+        hb_share = Path("/opt/homebrew/share/whisper-cpp/models")
+        if hb_share.exists():
+            for p in hb_share.glob("*.bin"):
+                if p.is_file() and p.stat().st_size > 10_000_000:
+                    return p
+
+        # 4. Auto-download base model if none found
+        return WhisperTranscriberV3._auto_download_model()
+
+    @staticmethod
+    def _auto_download_model() -> Optional[Path]:
+        """Auto-download official ggml-base.en model if no models exist on disk."""
+        target_dir = Path.home() / ".cache" / "universal_transcriber" / "models"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_file = target_dir / "ggml-base.en.bin"
+        if target_file.exists() and target_file.stat().st_size > 10_000_000:
+            return target_file
+
+        url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin"
+        try:
+            import urllib.request
+            print(f"[WhisperTranscriber] No pre-installed model found. Auto-downloading {url}...")
+            urllib.request.urlretrieve(url, str(target_file))
+            if target_file.exists() and target_file.stat().st_size > 10_000_000:
+                print(f"[WhisperTranscriber] Successfully downloaded model to {target_file}")
+                return target_file
+        except Exception as e:
+            print(f"[WhisperTranscriber] Auto-download failed: {e}")
         return None
 
     def calculate_timeout(self, audio_duration_seconds: float) -> int:
