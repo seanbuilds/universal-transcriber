@@ -181,7 +181,7 @@ Execute the complete verification test suite:
 /opt/homebrew/opt/python@3.14/bin/python3 -m pytest -v
 ```
 
-All 106 unit, integration, multi-domain, local media container, adversarial, and web API concurrency tests pass with 0 failures.
+All 112 unit, integration, multi-domain, local media container, adversarial, and web API concurrency tests pass with 0 failures.
 
 ---
 
@@ -191,6 +191,8 @@ For the complete historical record of all development milestones from initial co
 - [ITERATIONS_LOG_v1.md](ITERATIONS_LOG_v1.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [INSTALL.md](INSTALL.md)
+- [TUTORIALS.md](TUTORIALS.md)
+- [USER_MANUAL.md](USER_MANUAL.md) (Interactive video tutorials narrated with male voice)
 
 ---
 
