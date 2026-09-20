@@ -1,0 +1,12 @@
+# Universal Transcriber • Python Dependencies
+# <!-- Canonical requirements linking to requirements_v1.txt -->
+flask>=3.0.0
+flask-cors>=4.0.0
+jsonschema>=4.20.0
+python-docx>=1.1.0
+requests>=2.31.0
+pillow>=10.0.0
+numpy>=1.26.0
+scipy>=1.11.0
+yt-dlp>=2024.0.0
+pytest>=8.0.0

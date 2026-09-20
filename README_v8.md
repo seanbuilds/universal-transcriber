@@ -7,7 +7,7 @@
 [![Engineered by: @seanbuilds](https://img.shields.io/badge/Engineered%20by-%40seanbuilds-6366f1.svg)](https://github.com/seanbuilds)
 [![Tests: 106 Passing](https://img.shields.io/badge/Tests-106%20Passing-success.svg)](tests/)
 
-<!-- Canonical README linking to README_v8.md -->
+<!-- v8 – Official 0.1-beta release: turnkey installer (install.sh), 1-click launcher (start_app.sh), canonical entrypoints, and comprehensive documentation -->
 
 **Universal Transcriber** is an autonomous, high-performance speech transcription and acoustic speaker diarization platform engineered specifically for Apple Silicon Macs (M1/M2/M3/M4).
 

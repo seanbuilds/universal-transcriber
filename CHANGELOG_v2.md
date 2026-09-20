@@ -1,5 +1,5 @@
-# ⏱️ Universal Transcriber: Iterations & Chronological Timeline Log
-<!-- Canonical changelog linking to CHANGELOG_v2.md -->
+# ⏱️ Universal Transcriber: Iterations & Chronological Timeline Log (v2)
+<!-- v2 – Chronological history including official 0.1-beta release, turnkey installer, canonical entrypoints, and archival updates -->
 
 **Author / Maintainer**: Sean Tyler ([@seanbuilds](https://github.com/seanbuilds))  
 **Email**: `ohheysean@gmail.com`  

@@ -79,6 +79,7 @@ class TranscriptionPipelineV6:
         self,
         source: str,
         playbook_name: str = DEFAULT_PLAYBOOK,
+        output_dir: Optional[Any] = None,
         job_id: Optional[str] = None,
         custom_name: Optional[str] = None,
         progress_callback: Optional[Callable[[str, int], None]] = None,
@@ -181,10 +182,11 @@ class TranscriptionPipelineV6:
 
             # 6. Multi-Format Atomic Export with Standardized ISO-8601 Naming
             emit("Exporting multi-format transcripts with ISO-8601 naming", 95, status=STATUS_COMPLETED)
+            effective_out_dir = Path(output_dir) if output_dir else self.output_dir
             exported_paths = self.exporter.export(
                 blocks=healed_blocks,
                 metadata=meta,
-                custom_dir=self.output_dir,
+                custom_dir=effective_out_dir,
                 custom_name=custom_name,
             )
 
@@ -197,10 +199,20 @@ class TranscriptionPipelineV6:
                 "json": str(exported_paths["json"]),
             }
 
+            distinct_speakers = set(b.get("speaker") for b in healed_blocks if b.get("speaker"))
+            total_words = sum(len(b.get("text", "").split()) for b in healed_blocks)
+            display_title = meta.get("custom_title") or meta.get("title") or exported_paths["iso_name"]
+
             result_payload = {
                 "status": "success",
                 "job_id": job_id,
+                "title": display_title,
+                "duration": audio_duration,
+                "duration_str": meta.get("duration_str", "00:00:00"),
+                "speaker_count": len(distinct_speakers),
+                "word_count": total_words,
                 "iso_name": exported_paths["iso_name"],
+                "iso_output_dir": str(exported_paths["dir"]),
                 "metadata": meta,
                 "playbook": playbook.name,
                 "total_blocks": len(healed_blocks),
