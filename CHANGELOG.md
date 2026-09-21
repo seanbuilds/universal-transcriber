@@ -24,6 +24,11 @@ Universal Transcriber evolved through a sequence of rigorous milestones—advanc
 | **v6** | `2026-09-17 12:04:16 EDT` | Multi-Format Local Media Containers & Web Dropzone | `ingest_v4.py`, `pipeline_v6.py`, `cli_v6.py`, `app_v5.py` | 106 Tests Passing |
 | **v7** | `2026-09-18 10:30:00 EDT` | Production Open-Source Release & GitHub Publication | `LICENSE`, `ITERATIONS_LOG_v1.md`, `README_v7.md`, `@seanbuilds` branding | 106 Tests Passing (100%) |
 | **v8 (0.1-Beta)** | `2026-09-20 12:20:00 EDT` | Official 0.1-Beta Product Transition & Turnkey Installer | `install.sh`, `start_app.sh`, `cli.py`, `app.py`, `config.py`, `INSTALL.md` | 106 Tests Passing (100%) |
+| **v9 (Playlist Staging)** | `2026-09-21 10:45:00 EDT` | YouTube Playlist Breakdown, Staging Manifests, Placeholders & Resume | `playlist_v1.py`, `pipeline_v6.py`, `cli_v7.py`, `app_v6.py`, `index.html` | 119 Tests Passing (100%) |
+| **v10 (Danger Zone)** | `2026-09-21 11:35:00 EDT` | Danger Zone UI History Clear & Disk Preservation Guarantee | `audit_v1.py`, `queue_v2.py`, `app_v6.py`, `index.html`, `test_danger_zone_clear_v1.py` | 122 Tests Passing (100%) |
+| **v11 (Copy Commands & Metadata)** | `2026-09-21 11:45:00 EDT` | 1-Click Copy Commands & Ubiquitous Meeting / URL Display Across All Boxes | `export_v4.py`, `pipeline_v6.py`, `app_v6.py`, `index.html` | 122 Tests Passing (100%) |
+| **v12 (Local Folder & 6-Format Export)** | `2026-09-21 11:52:00 EDT` | Strict Post-Processing Local Folder & 6-Format Export Guarantee | `export_v4.py`, `pipeline_v6.py`, `app_v6.py`, `index.html`, `test_post_transcription_export_v1.py` | 126 Tests Passing (100%) |
+
 
 ---
 
@@ -151,3 +156,65 @@ Universal Transcriber evolved through a sequence of rigorous milestones—advanc
   - **Document Hygiene & v5 Archival Enforcement**:
     - Moved `README_v6.md` and `cli_v5.py` to `archive/` per the v5 Archival Policy.
 - **Verification**: 106 tests passing with 100% success rate.
+
+---
+
+### Iteration 9 — YouTube Playlist Breakdown, Staging Manifests & Step-by-Step Transcriber
+- **Date**: `2026-09-21 10:45:00 EDT`
+- **Objective**: Dynamically split YouTube playlists into individual video files, stage a dedicated collection folder with placeholder files, present upfront confirmation warning with video count, and transcribe sequentially with resume capabilities.
+- **Components Implemented**:
+  - `src/engine/playlist_v1.py`: `PlaylistManagerV1` with flat-playlist inspection, `playlist_manifest.json`, `PLAYLIST_INDEX.md`, and atomic `.pending` placeholder tracking.
+  - `src/engine/pipeline_v6.py`: `process_playlist()` and `process_batch()`.
+  - `cli_v7.py` / `cli.py`: Interactive `playlist` subcommand with upfront warning box and `--yes`/`--dry-run` flags.
+  - `app_v6.py` / `static/index.html`: Playlist confirmation modal dialog and live staging tracker card with progress bar.
+- **Verification**: 119 tests passing (`tests/test_playlist_staging_v1.py`).
+
+---
+
+### Iteration 10 — Danger Zone UI History Clear & Disk Preservation Guarantee
+- **Date**: `2026-09-21 11:35:00 EDT`
+- **Objective**: Add a dedicated Danger Zone card at the bottom of the dashboard to clear previously worked-on projects from the UI with an interactive confirmation modal, while guaranteeing physical files and folders on disk remain untouched.
+- **Components Implemented**:
+  - **Danger Zone UI Section (`static/index.html`)**: Crimson-accented Danger Zone card at the bottom of the dashboard with clear warning copy and red action button.
+  - **Confirmation Dialog (`static/index.html`)**: `<dialog id="clearHistoryModal">` with "⚠️ Are you sure?" warning and explicit disk safety guarantee.
+  - **Engine Reset Methods (`src/engine/audit_v1.py` & `src/engine/queue_v2.py`)**: `clear_audit_history()` and `clear_all_jobs()` to purge database rows and JSONL log while preserving files on disk.
+  - **REST API Endpoint (`app_v6.py`)**: `POST /api/audit/clear` returning structured confirmation with `disk_files_preserved: true`.
+- **Verification**: 122 tests passing (`tests/test_danger_zone_clear_v1.py`).
+ 
+---
+ 
+### Iteration 11 — 1-Click Copy Commands & Ubiquitous Meeting / URL Display Across All Boxes
+- **Date**: `2026-09-21 11:45:00 EDT`
+- **Objective**: Add 1-click clipboard copy commands across all UI input and output boxes, enable copying meeting info back into input fields, and ensure the meeting / transcript name and YouTube URL are displayed across every card, modal, and export file.
+- **Components Implemented**:
+  - **Input Box Enhancements (`static/index.html`)**: Added inline `📋 Copy URL` and `📋 Copy Name` inside input fields, and `📋 Copy Command` CLI generator.
+  - **Results Card Enhancements (`static/index.html`)**: Added `#resultsInfoBox` with formatted Meeting Name and YouTube URL, action toolbar (`📋 Copy All Info`, `📋 Copy Transcript`, `📋 Copy Command`, `📥 Copy into Input Boxes`), and transcript header bar with `📋 Copy Box Content`.
+  - **Playlist Confirmation Modal & Batch Tracker (`static/index.html`)**: Added Meeting/Playlist Name and YouTube Playlist URL displays with copy buttons and per-video URL copy buttons in table rows.
+  - **Audit Log Table (`static/index.html`)**: Added `Meeting / Transcript Name` and `YouTube URL / Source` columns with inline `📋` copy buttons.
+  - **Export Engine (`src/engine/export_v4.py`)**: Updated `.txt`, `.md`, `.srt`, `.vtt`, `.docx`, and `.json` generators to explicitly include Meeting / Transcript Name and YouTube / Source URL.
+- **Verification**: 122 tests passing with 100% success rate.
+
+---
+
+### Iteration 12 — Atomic Post-Transcription Local Folder & Multi-Format File Generation
+- **Date**: `2026-09-21 11:51:00 EDT`
+- **Objective**: Guarantee that for each completed transcription (single video or playlist item), a dedicated local folder and all 6 offered file formats (`.md`, `.txt`, `.srt`, `.vtt`, `.docx`, `.json`) are created on disk strictly AFTER all pipeline steps (Ingest → Preprocess → Metal Streaming ASR → Neural Diarization → Role Healing) have fully succeeded, with zero premature or partial files created on disk if an error occurs.
+- **Components Implemented**:
+  - **Atomic Exporter with Rollback & Assertion (`src/engine/export_v4.py`)**:
+    - Added `direct_dir` parameter enabling direct folder targeting without redundant nested sub-subfolders.
+    - Implemented atomic rollback: if writing any export file fails midway, all `.tmp` scratch files and newly created empty directories are unlinked.
+    - Added post-export integrity assertion: verifies that all 6 files (`.md`, `.txt`, `.srt`, `.vtt`, `.docx`, `.json`) exist on disk and possess non-zero file size prior to returning success.
+  - **Strict Pipeline Timing Guarantee (`src/engine/pipeline_v6.py`)**:
+    - Removed premature `item_output_subfolder.mkdir()` in `process_playlist()`.
+    - Enforced that directory creation and multi-format file generation occur exclusively inside Step 6 after Steps 1–5 have passed without error.
+  - **Finder Reveal & Local File Management API (`app_v6.py`)**:
+    - Added `POST /api/open-folder` endpoint with strict directory traversal prevention constrained to `TRANSCRIPTS_DIR`.
+    - Triggers native macOS `/usr/bin/open <path>` to reveal local folders and files in Finder.
+  - **Web Dashboard Local Files Card & Finder Integration (`static/index.html`)**:
+    - Added `#localFilesBox` inside `#resultsCard` displaying local folder path, `📂 Reveal in Finder`, and `📋 Copy Folder Path` buttons.
+    - Added a responsive 2-column grid displaying all 6 generated local file paths with individual `📋` copy buttons.
+    - Updated Playlist Batch Tracker table to display local folder names with `📋 Copy Path` and `📂 Reveal in Finder` action buttons.
+  - **CLI Completion Reporting (`cli_v7.py` / `cli.py`)**:
+    - Enhanced terminal output to display "All Steps Completed! Local Files Created on Disk", listing the local folder path and all 6 generated file paths.
+- **Verification**: 126 tests passing across all 23 test modules (`tests/test_post_transcription_export_v1.py`).
+

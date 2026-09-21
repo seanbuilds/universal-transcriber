@@ -7,8 +7,10 @@ import json
 import os
 import queue
 import re
+import subprocess
 import threading
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -22,6 +24,11 @@ from src.engine.diarize_v3 import SpeakerDatabaseV3
 from src.engine.queue_v2 import JobQueue
 from src.engine.catalog_v1 import MediaCatalog
 from src.engine.audit_v1 import TranscriptionAuditLogger
+from src.engine.playlist_v1 import (
+    PlaylistManagerV1,
+    PLAYLISTS_BASE_DIR,
+    sanitize_filename,
+)
 from config_v5 import (
     BASE_DIR,
     WEB_HOST,
@@ -55,6 +62,7 @@ speaker_db = SpeakerDatabaseV3()
 job_queue = JobQueue(QUEUE_DB_PATH)
 catalog = MediaCatalog(CATALOG_DB_PATH)
 audit_logger = TranscriptionAuditLogger(AUDIT_DB_PATH, AUDIT_LOG_JSONL_PATH)
+playlist_mgr = PlaylistManagerV1(base_playlists_dir=TRANSCRIPTS_DIR / "Playlists")
 
 # In-memory pub/sub broker for SSE real-time streaming
 _subscribers_lock = threading.Lock()
@@ -203,6 +211,284 @@ def upload_file():
     })
 
 
+@app.route("/api/playlist/inspect", methods=["POST"])
+def inspect_playlist_endpoint():
+    """Inspect YouTube playlist metadata without downloading media."""
+    data = request.get_json(silent=True) or {}
+    url = data.get("url", "").strip()
+    limit = data.get("limit", 0)
+    if not url:
+        return jsonify({"error": "Missing 'url' parameter"}), 400
+
+    try:
+        limit_arg = int(limit) if limit and int(limit) > 0 else None
+        meta = playlist_mgr.inspect_playlist(url, limit=limit_arg)
+        clean_title = sanitize_filename(meta.get("title", "Playlist"))
+        target_dir = PLAYLISTS_BASE_DIR / f"{meta.get('iso_date')}_{clean_title}"
+
+        return jsonify({
+            "success": True,
+            "title": meta.get("title"),
+            "source_url": url,
+            "item_count": meta.get("item_count"),
+            "total_duration_seconds": meta.get("total_duration_seconds"),
+            "total_duration_str": meta.get("total_duration_str"),
+            "target_dir": str(target_dir),
+            "items": meta.get("items"),
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to inspect playlist: {str(e)}"}), 500
+
+
+@app.route("/api/playlist/start", methods=["POST"])
+def start_playlist_endpoint():
+    """Initialize playlist staging directory, manifest, placeholder files, and begin step-by-step transcription."""
+    data = request.get_json(silent=True) or {}
+    url = data.get("url", "").strip()
+    playbook = data.get("playbook", DEFAULT_PLAYBOOK).strip()
+    clustering = data.get("clustering", "ahc").strip()
+    limit = data.get("limit", 0)
+    custom_folder_name = data.get("custom_folder_name")
+    resume = data.get("resume", True)
+
+    if not url:
+        return jsonify({"error": "Missing 'url' parameter"}), 400
+
+    limit_arg = int(limit) if limit and int(limit) > 0 else None
+
+    # Inspect & Stage immediately so client gets folder path and manifest
+    try:
+        meta = playlist_mgr.inspect_playlist(url, limit=limit_arg)
+        playlist_dir, manifest_path = playlist_mgr.stage_playlist(
+            meta=meta,
+            custom_folder_name=custom_folder_name,
+        )
+    except Exception as e:
+        return jsonify({"error": f"Failed to stage playlist: {str(e)}"}), 500
+
+    playlist_id = playlist_dir.name
+
+    def playlist_worker():
+        try:
+            p = TranscriptionPipelineV6(clustering_mode=clustering)
+            p.process_playlist(
+                source=url,
+                playbook_name=playbook,
+                output_dir=PLAYLISTS_BASE_DIR,
+                limit=limit_arg,
+                resume=resume,
+                custom_folder_name=custom_folder_name,
+            )
+        except Exception as e:
+            print(f"Background playlist worker error: {e}")
+
+    t = threading.Thread(target=playlist_worker, daemon=True)
+    t.start()
+
+    return jsonify({
+        "success": True,
+        "status": "accepted",
+        "playlist_id": playlist_id,
+        "title": meta.get("title"),
+        "playlist_dir": str(playlist_dir),
+        "manifest_path": str(manifest_path),
+        "item_count": meta.get("item_count"),
+        "message": "Playlist collection staged with manifest and placeholder files. Step-by-step transcription started."
+    }), 202
+
+
+@app.route("/api/folder/inspect", methods=["POST"])
+def inspect_folder_endpoint():
+    """Inspect a local folder on disk for supported audio and video files."""
+    data = request.get_json(silent=True) or {}
+    folder_path = data.get("folder_path", "").strip()
+    recursive = bool(data.get("recursive", False))
+    limit = data.get("limit", 0)
+
+    if not folder_path:
+        return jsonify({"error": "Missing 'folder_path' parameter"}), 400
+
+    p = Path(folder_path).expanduser().resolve()
+    if not p.exists() or not p.is_dir():
+        return jsonify({"error": f"Folder does not exist or is not a directory: {folder_path}"}), 404
+
+    try:
+        limit_arg = int(limit) if limit and int(limit) > 0 else None
+        meta = playlist_mgr.inspect_local_directory(p, recursive=recursive, limit=limit_arg)
+        clean_title = sanitize_filename(meta.get("title", p.name))
+        target_dir = PLAYLISTS_BASE_DIR / f"{meta.get('iso_date')}_{clean_title}"
+
+        return jsonify({
+            "success": True,
+            "title": meta.get("title"),
+            "source_url": str(p),
+            "folder_path": str(p),
+            "item_count": meta.get("item_count"),
+            "total_duration_seconds": meta.get("total_duration_seconds"),
+            "total_duration_str": meta.get("total_duration_str"),
+            "target_dir": str(target_dir),
+            "items": meta.get("items"),
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to inspect folder: {str(e)}"}), 500
+
+
+@app.route("/api/folder/start", methods=["POST"])
+def start_folder_endpoint():
+    """Initialize folder batch staging directory, manifest, placeholder files, and begin step-by-step transcription."""
+    data = request.get_json(silent=True) or {}
+    folder_path = data.get("folder_path", "").strip()
+    playbook = data.get("playbook", DEFAULT_PLAYBOOK).strip()
+    clustering = data.get("clustering", "ahc").strip()
+    limit = data.get("limit", 0)
+    custom_folder_name = data.get("custom_folder_name")
+    recursive = bool(data.get("recursive", False))
+    resume = data.get("resume", True)
+
+    if not folder_path:
+        return jsonify({"error": "Missing 'folder_path' parameter"}), 400
+
+    p = Path(folder_path).expanduser().resolve()
+    if not p.exists() or not p.is_dir():
+        return jsonify({"error": f"Folder does not exist or is not a directory: {folder_path}"}), 404
+
+    limit_arg = int(limit) if limit and int(limit) > 0 else None
+
+    try:
+        meta = playlist_mgr.inspect_local_directory(p, recursive=recursive, limit=limit_arg)
+        if meta.get("item_count", 0) == 0:
+            return jsonify({"error": f"No supported audio or video files found in {folder_path}"}), 400
+
+        playlist_dir, manifest_path = playlist_mgr.stage_playlist(
+            meta=meta,
+            custom_folder_name=custom_folder_name,
+        )
+    except Exception as e:
+        return jsonify({"error": f"Failed to stage folder batch: {str(e)}"}), 500
+
+    playlist_id = playlist_dir.name
+
+    def folder_worker():
+        try:
+            pipeline_inst = TranscriptionPipelineV6(clustering_mode=clustering)
+            pipeline_inst.process_playlist(
+                source=str(p),
+                playbook_name=playbook,
+                output_dir=PLAYLISTS_BASE_DIR,
+                limit=limit_arg,
+                resume=resume,
+                custom_folder_name=custom_folder_name,
+            )
+        except Exception as e:
+            print(f"Background folder batch worker error: {e}")
+
+    t = threading.Thread(target=folder_worker, daemon=True)
+    t.start()
+
+    return jsonify({
+        "success": True,
+        "status": "accepted",
+        "playlist_id": playlist_id,
+        "title": meta.get("title"),
+        "playlist_dir": str(playlist_dir),
+        "manifest_path": str(manifest_path),
+        "item_count": meta.get("item_count"),
+        "message": "Folder batch collection staged with manifest and placeholder files. Step-by-step transcription started."
+    }), 202
+
+
+@app.route("/api/folder/upload", methods=["POST"])
+def upload_folder_batch():
+    """Upload multiple files from a browser folder picker, stage them into a batch collection, and start transcription."""
+    uploaded_files = request.files.getlist("files") or request.files.getlist("files[]")
+    if not uploaded_files:
+        return jsonify({"error": "No files provided in request"}), 400
+
+    folder_name_raw = request.form.get("folder_name", "").strip() or "Folder_Upload"
+    clean_folder_name = sanitize_filename(folder_name_raw)
+    playbook = request.form.get("playbook", DEFAULT_PLAYBOOK).strip()
+    clustering = request.form.get("clustering", "ahc").strip()
+    iso_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    target_upload_dir = UPLOADS_DIR / "folder_batches" / f"{iso_date}_{clean_folder_name}_{uuid.uuid4().hex[:4]}"
+    target_upload_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_count = 0
+    for f in uploaded_files:
+        if not f or not f.filename:
+            continue
+        fname = Path(f.filename).name
+        ext = Path(fname).suffix.lower()
+        if ext in SUPPORTED_LOCAL_EXTENSIONS:
+            safe_fname = f"{saved_count+1:03d}_{sanitize_filename(Path(fname).stem)}{ext}"
+            f.save(str(target_upload_dir / safe_fname))
+            saved_count += 1
+
+    if saved_count == 0:
+        shutil.rmtree(target_upload_dir, ignore_errors=True)
+        return jsonify({"error": "None of the uploaded files match supported media extensions."}), 400
+
+    try:
+        meta = playlist_mgr.inspect_local_directory(target_upload_dir)
+        meta["title"] = folder_name_raw
+        playlist_dir, manifest_path = playlist_mgr.stage_playlist(
+            meta=meta,
+            custom_folder_name=clean_folder_name,
+        )
+    except Exception as e:
+        return jsonify({"error": f"Failed to stage uploaded folder: {str(e)}"}), 500
+
+    playlist_id = playlist_dir.name
+
+    def upload_batch_worker():
+        try:
+            pipeline_inst = TranscriptionPipelineV6(clustering_mode=clustering)
+            pipeline_inst.process_playlist(
+                source=str(target_upload_dir),
+                playbook_name=playbook,
+                output_dir=PLAYLISTS_BASE_DIR,
+                resume=True,
+                custom_folder_name=clean_folder_name,
+            )
+        except Exception as e:
+            print(f"Background uploaded folder batch worker error: {e}")
+
+    t = threading.Thread(target=upload_batch_worker, daemon=True)
+    t.start()
+
+    return jsonify({
+        "success": True,
+        "status": "accepted",
+        "playlist_id": playlist_id,
+        "title": folder_name_raw,
+        "playlist_dir": str(playlist_dir),
+        "manifest_path": str(manifest_path),
+        "item_count": meta.get("item_count"),
+        "message": f"Successfully uploaded {saved_count} media files and staged folder collection. Step-by-step transcription started."
+    }), 202
+
+
+@app.route("/api/playlist/<path:playlist_name>/status", methods=["GET"])
+def get_playlist_status(playlist_name):
+    """Retrieve status of staged playlist from its manifest."""
+    safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '', Path(playlist_name).name)
+    playlist_dir = PLAYLISTS_BASE_DIR / safe_name
+    manifest_path = playlist_dir / "playlist_manifest.json"
+
+    if not manifest_path.exists():
+        return jsonify({"error": f"Playlist '{safe_name}' manifest not found"}), 404
+
+    try:
+        manifest = playlist_mgr.load_manifest(manifest_path)
+        return jsonify({
+            "success": True,
+            "manifest": manifest,
+            "playlist_dir": str(playlist_dir),
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to read manifest: {str(e)}"}), 500
+
+
 @app.route("/api/jobs", methods=["GET"])
 def get_jobs():
     """List recent background jobs."""
@@ -264,6 +550,7 @@ def get_audit_trail():
 
 
 @app.route("/api/audit/<job_id>/mark-used", methods=["POST"])
+@app.route("/api/audit/<job_id>/used", methods=["POST"])
 def mark_audit_job_used(job_id):
     """Mark a transcription as used / consumed."""
     data = request.get_json(silent=True) or {}
@@ -272,6 +559,23 @@ def mark_audit_job_used(job_id):
     if not success:
         return jsonify({"error": f"Job ID '{job_id}' not found in audit log"}), 404
     return jsonify({"success": True, "job_id": job_id, "used_flag": 1})
+
+
+@app.route("/api/audit/clear", methods=["POST"])
+def clear_audit_history_endpoint():
+    """Clear all audit history records and queued jobs from the database and UI without touching disk files."""
+    cleared_audit = audit_logger.clear_audit_history(clear_jsonl=True)
+    cleared_queue = job_queue.clear_all_jobs()
+    with _subscribers_lock:
+        _event_history.clear()
+    return jsonify({
+        "success": True,
+        "message": f"Cleared {cleared_audit} audit record(s) and {cleared_queue} queue job(s) from UI.",
+        "cleared_records": cleared_audit,
+        "cleared_jobs": cleared_queue,
+        "disk_files_preserved": True,
+    })
+
 
 
 @app.route("/api/stream/<job_id>")
@@ -445,6 +749,30 @@ def download_transcript_file(file_path):
             break
 
     return send_file(str(safe_path), as_attachment=False)
+
+
+@app.route("/api/open-folder", methods=["POST"])
+def open_local_folder():
+    """Reveal a transcription folder in macOS Finder (strictly within TRANSCRIPTS_DIR)."""
+    data = request.get_json(silent=True) or {}
+    folder_param = data.get("path", "").strip()
+    if not folder_param:
+        return jsonify({"error": "Missing 'path' parameter"}), 400
+
+    target_dir = Path(folder_param).resolve()
+    transcripts_root = TRANSCRIPTS_DIR.resolve()
+
+    if not (str(target_dir) == str(transcripts_root) or str(target_dir).startswith(str(transcripts_root) + "/")):
+        return jsonify({"error": "Access denied. Path outside allowed directory."}), 403
+
+    if not target_dir.exists() or not target_dir.is_dir():
+        return jsonify({"error": "Folder not found on local disk"}), 404
+
+    try:
+        subprocess.run(["/usr/bin/open", str(target_dir)], check=True, timeout=5)
+        return jsonify({"success": True, "opened": str(target_dir)})
+    except Exception as e:
+        return jsonify({"error": f"Failed to reveal folder: {e}"}), 500
 
 
 @app.route("/api/info")

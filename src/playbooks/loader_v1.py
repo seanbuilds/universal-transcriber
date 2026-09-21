@@ -79,6 +79,12 @@ class PlaybookLoader:
             self.playbooks_dir / f"{target_name}_v1.json",
             self.playbooks_dir / f"{target_name}.json",
         ]
+        if target_name in ("general", "general_speech"):
+            alt = "general_speech" if target_name == "general" else "general"
+            candidates.extend([
+                self.playbooks_dir / f"{alt}_v1.json",
+                self.playbooks_dir / f"{alt}.json",
+            ])
         for c in candidates:
             if c.exists():
                 try:

@@ -80,10 +80,11 @@ class TranscriptionPipelineV6:
         source: str,
         playbook_name: str = DEFAULT_PLAYBOOK,
         output_dir: Optional[Any] = None,
-        job_id: Optional[str] = None,
         custom_name: Optional[str] = None,
+        job_id: Optional[str] = None,
         progress_callback: Optional[Callable[[str, int], None]] = None,
         segment_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+        direct_dir: bool = False,
     ) -> Dict[str, Any]:
         """Execute the end-to-end transcription, multi-format media ingest, diarization, healing, ISO export, and audit pipeline."""
         job_id = job_id or f"job_{uuid.uuid4().hex[:8]}"
@@ -188,6 +189,7 @@ class TranscriptionPipelineV6:
                 metadata=meta,
                 custom_dir=effective_out_dir,
                 custom_name=custom_name,
+                direct_dir=direct_dir,
             )
 
             file_map = {
@@ -207,6 +209,8 @@ class TranscriptionPipelineV6:
                 "status": "success",
                 "job_id": job_id,
                 "title": display_title,
+                "meeting_name": display_title,
+                "source": meta.get("source") or source,
                 "duration": audio_duration,
                 "duration_str": meta.get("duration_str", "00:00:00"),
                 "speaker_count": len(distinct_speakers),
@@ -243,6 +247,142 @@ class TranscriptionPipelineV6:
             raise
         finally:
             self.ingestor.cleanup_job(job_id)
+
+    def process_playlist(
+        self,
+        source: str,
+        playbook_name: str = DEFAULT_PLAYBOOK,
+        output_dir: Optional[Any] = None,
+        limit: Optional[int] = None,
+        progress_callback: Optional[Callable[[str, int, Dict[str, Any]], None]] = None,
+        item_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+        resume: bool = True,
+        custom_folder_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Stage playlist manifest and placeholder files, then sequentially transcribe each video step-by-step."""
+        from src.engine.playlist_v1 import (
+            PlaylistManagerV1,
+            STATUS_IN_PROGRESS,
+            STATUS_COMPLETED,
+            STATUS_FAILED,
+            sanitize_filename,
+        )
+
+        base_dir = Path(output_dir) if output_dir else (TRANSCRIPTS_DIR / "Playlists")
+        mgr = PlaylistManagerV1(base_playlists_dir=base_dir)
+
+        # Inspect playlist or local folder metadata
+        playlist_meta = mgr.inspect_source(source, limit=limit)
+        playlist_dir, manifest_path = mgr.stage_playlist(
+            meta=playlist_meta,
+            custom_folder_name=custom_folder_name,
+        )
+
+        items_to_process = mgr.get_pending_items(manifest_path) if resume else playlist_meta.get("items", [])
+        total_items = len(playlist_meta.get("items", []))
+        processed_results = []
+
+        for item in items_to_process:
+            idx = item.get("index", 1)
+            video_title = item.get("title", f"Video_{idx}")
+            video_url = item.get("url") or source
+            item_id = item.get("id")
+
+            mgr.update_item_status(manifest_path, item_id, STATUS_IN_PROGRESS)
+
+            if progress_callback:
+                progress_callback(
+                    f"[{idx}/{total_items}] Transcribing: {video_title}",
+                    int((idx - 1) / max(1, total_items) * 100),
+                    {"item": item, "index": idx, "total": total_items},
+                )
+
+            try:
+                # Video-specific output directory under playlist folder: e.g. 001_Title
+                # Created strictly after all transcription steps succeed (in Step 6)
+                clean_title = sanitize_filename(video_title)
+                item_output_subfolder = playlist_dir / f"{idx:03d}_{clean_title}"
+
+                res = self.process(
+                    source=video_url,
+                    playbook_name=playbook_name,
+                    output_dir=item_output_subfolder,
+                    custom_name=video_title,
+                    direct_dir=True,
+                )
+
+                mgr.update_item_status(
+                    manifest_path=manifest_path,
+                    item_id=item_id,
+                    status=STATUS_COMPLETED,
+                    output_dir=res.get("iso_output_dir") or item_output_subfolder,
+                    job_id=res.get("job_id"),
+                    duration_seconds=res.get("duration", 0),
+                )
+                processed_results.append(res)
+                if item_callback:
+                    item_callback({"status": "completed", "item": item, "result": res})
+
+            except Exception as e:
+                err_msg = str(e)
+                mgr.update_item_status(
+                    manifest_path=manifest_path,
+                    item_id=item_id,
+                    status=STATUS_FAILED,
+                    error_message=err_msg,
+                )
+                if item_callback:
+                    item_callback({"status": "failed", "item": item, "error": err_msg})
+                # Continue to next video without failing entire playlist run
+
+        final_manifest = mgr.load_manifest(manifest_path)
+        return {
+            "status": final_manifest.get("status"),
+            "playlist_dir": str(playlist_dir),
+            "manifest_path": str(manifest_path),
+            "manifest": final_manifest,
+            "results": processed_results,
+        }
+
+    def process_batch(
+        self,
+        source: str,
+        playbook_name: str = DEFAULT_PLAYBOOK,
+        output_dir: Optional[Any] = None,
+        progress_callback: Optional[Callable[[str, int], None]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Batch process a playlist or directory of media files."""
+        meta = self.ingestor.inspect_source(source)
+        if meta.get("is_playlist"):
+            res = self.process_playlist(
+                source=source,
+                playbook_name=playbook_name,
+                output_dir=output_dir,
+                progress_callback=lambda msg, pct, extra: progress_callback(msg, pct) if progress_callback else None,
+            )
+            return res.get("results", [])
+
+        # Local directory batching
+        src_path = Path(source).resolve()
+        if src_path.is_dir():
+            files = self.ingestor.scan_directory(src_path, recursive=False)
+            results = []
+            for idx, f in enumerate(files, 1):
+                if progress_callback:
+                    progress_callback(f"[{idx}/{len(files)}] Processing {f.name}", int((idx - 1) / max(1, len(files)) * 100))
+                try:
+                    res = self.process(
+                        source=str(f),
+                        playbook_name=playbook_name,
+                        output_dir=output_dir,
+                        custom_name=f.stem,
+                    )
+                    results.append(res)
+                except Exception as e:
+                    print(f"Failed {f.name}: {e}")
+            return results
+        else:
+            return [self.process(source=source, playbook_name=playbook_name, output_dir=output_dir)]
 
 
 TranscriptionPipeline = TranscriptionPipelineV6

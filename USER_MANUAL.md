@@ -196,6 +196,57 @@ python3 cli.py email --target ohheysean@gmail.com --count 3
 
 ---
 
+## Tutorial 6: YouTube Playlist Breakdown, Staging Manifests & Placeholders
+
+Universal Transcriber dynamically breaks down any YouTube playlist into individual video entries, stages placeholder tracking files to ensure zero missed videos, prompts with an upfront confirmation warning, and transcribes each file step-by-step into its own ISO-8601 subfolder.
+
+### Step-by-Step Instructions:
+
+#### 1. Command-Line Playlist Import (CLI)
+```bash
+# Break down playlist, show upfront confirmation warning, and stage placeholders:
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --playbook municipal_meetings
+
+# Inspect playlist contents without downloading or staging (Dry Run):
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --dry-run
+
+# Run unattended without confirmation prompt:
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --yes
+
+# Resume an interrupted playlist run (skips already completed videos):
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..."
+```
+
+#### 2. Staged Directory Structure
+Each playlist import creates a dedicated parent directory:
+```text
+~/Documents/Transcripts/Playlists/YYYYMMDD_<Playlist_Title>/
+├── playlist_manifest.json          # Master tracking registry (PENDING, IN_PROGRESS, COMPLETED, FAILED)
+├── PLAYLIST_INDEX.md             # Human-readable Markdown summary table
+├── 001_20260921_Video_One/       # Subfolder for video #1 (all 6 formats)
+│   ├── 20260921_Video_One.md
+│   ├── 20260921_Video_One.txt
+│   ├── 20260921_Video_One.srt
+│   ├── 20260921_Video_One.vtt
+│   ├── 20260921_Video_One.docx
+│   └── 20260921_Video_One.json
+├── 002_20260921_Video_Two.pending # Placeholder while queued
+└── ...
+```
+
+#### 3. Web Dashboard Playlist Import
+1. Navigate to `http://127.0.0.1:5055`.
+2. Paste any YouTube playlist URL into the **Direct Media URL** field.
+3. Click **⚡ Transcribe**.
+4. An interactive modal dialog appears displaying:
+   - Total video count and estimated audio duration.
+   - Projected collection directory on disk.
+   - Full scrollable table of all videos in the playlist.
+5. Click **⚡ Confirm & Transcribe Step-by-Step**.
+6. The dedicated **Playlist Transcription Staging** card displays live progress, completed/failed/pending counters, and individual status badges for each video.
+
+---
+
 ## Supported Containers & Optimization Reference
 
 | Container | Codec / Layout | Ingestion Optimization |

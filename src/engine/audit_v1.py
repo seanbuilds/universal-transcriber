@@ -323,3 +323,17 @@ class TranscriptionAuditLogger:
                 "used": used,
                 "unused": unused,
             }
+
+    def clear_audit_history(self, clear_jsonl: bool = True) -> int:
+        """Clear all audit history records from the SQLite database and optionally archive/clear the JSONL ledger."""
+        with self._lock:
+            with self._get_conn() as conn:
+                count = conn.execute("SELECT COUNT(*) FROM transcription_audit").fetchone()[0]
+                conn.execute("DELETE FROM transcription_audit;")
+                conn.commit()
+            if clear_jsonl and self.jsonl_path.exists():
+                try:
+                    self.jsonl_path.write_text("", encoding="utf-8")
+                except Exception:
+                    pass
+            return count

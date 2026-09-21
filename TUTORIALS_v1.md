@@ -1,5 +1,5 @@
-# 🎙️ Universal Transcriber • Comprehensive Operational Tutorial & Video Guide (v1)
-<!-- v1 – Complete step-by-step tutorial guide for 0.1-beta release, featuring canonical entrypoints, automated setup, and multimedia workflows -->
+# 🎙️ Universal Transcriber • Comprehensive Operational Tutorial & Video Guide
+<!-- Canonical tutorials manual linking to TUTORIALS_v1.md -->
 
 **Universal Transcriber** is an autonomous speech transcription, acoustic speaker diarization, and self-healing dialogue formatting platform engineered natively for macOS and Apple Silicon Metal GPUs.
 
@@ -171,6 +171,45 @@ Dispatch transcripts directly to Sean Tyler via Apple Mail:
 ```bash
 python3 cli.py email --target ohheysean@gmail.com --count 3
 ```
+
+---
+
+## Tutorial 6: YouTube Playlist Breakdown & Placeholder Staging
+
+When dealing with YouTube playlists containing dozens of videos, Universal Transcriber breaks down the playlist, stages placeholders so zero videos can be missed, prompts with an upfront confirmation warning, and transcribes each file step-by-step.
+
+### Step 1: Run Playlist Import (CLI)
+```bash
+# Break down playlist, view upfront warning, and stage placeholders:
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --playbook municipal_meetings
+
+# Inspect videos without downloading or staging (Dry Run):
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --dry-run
+
+# Run unattended without confirmation prompt:
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --yes
+
+# Resume an interrupted playlist run (skips already completed videos):
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..."
+```
+
+### Step 2: What Staging Creates on Disk
+```text
+~/Documents/Transcripts/Playlists/YYYYMMDD_<Playlist_Title>/
+├── playlist_manifest.json          ← Master tracking registry (PENDING, IN_PROGRESS, COMPLETED, FAILED)
+├── PLAYLIST_INDEX.md             ← Human-readable Markdown summary table
+├── 001_20260921_Video_One/       ← Subfolder for video #1 (all 6 formats)
+├── 002_20260921_Video_Two.pending ← Placeholder while queued
+└── ...
+```
+
+### Step 3: Run via Web Dashboard
+1. Open `http://127.0.0.1:5055`.
+2. Paste any YouTube playlist URL (`https://www.youtube.com/playlist?list=...`) into the **Direct Media URL** field.
+3. Click **⚡ Transcribe**.
+4. An interactive modal dialog opens displaying the video count, estimated audio duration, target directory, and full video list.
+5. Click **⚡ Confirm & Transcribe Step-by-Step**.
+6. The dedicated **Playlist Transcription Staging** card tracks live progress video by video.
 
 ---
 

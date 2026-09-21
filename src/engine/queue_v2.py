@@ -148,3 +148,12 @@ class JobQueue:
             cur = conn.execute("SELECT * FROM jobs ORDER BY updated_at DESC LIMIT ?", (limit,))
             rows = cur.fetchall()
             return [dict(r) for r in rows]
+
+    def clear_all_jobs(self) -> int:
+        """Clear all jobs from the job queue."""
+        with self._connection() as conn:
+            cur = conn.execute("SELECT COUNT(*) FROM jobs")
+            cnt = cur.fetchone()[0]
+            conn.execute("DELETE FROM jobs;")
+            return cnt
+

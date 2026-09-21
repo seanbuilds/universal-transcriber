@@ -109,13 +109,13 @@ def cmd_transcribe(args):
     )
 
     print("\n" + "=" * 65)
-    print("✅ Transcription Complete!")
+    print("✅ All Steps Completed! Local Files Created on Disk:")
     print(f"Title:         {res.get('title')}")
     print(f"Duration:      {res.get('duration_str')}")
     print(f"Speakers:      {res.get('speaker_count')}")
     print(f"Word Count:    {res.get('word_count')}")
-    print(f"ISO Directory: {res.get('iso_output_dir')}")
-    print("\nGenerated Formats:")
+    print(f"Local Folder:  {res.get('iso_output_dir')}")
+    print("\nLocal Files Generated on Disk (100% Local):")
     for fmt, p in res.get("files", {}).items():
         print(f"  • {fmt.upper():<5} -> {p}")
     print("=" * 65)
@@ -168,11 +168,117 @@ def cmd_local(args):
                 print(f"❌ Failed to transcribe {media_file.name}: {e}", file=sys.stderr)
 
 
-def cmd_batch(args):
-    """Execute batch processing over playlist or directory."""
+def cmd_playlist(args):
+    """Break down YouTube playlist, display warning prompt, stage manifest & placeholders, and transcribe step-by-step."""
+    from src.engine.playlist_v1 import PlaylistManagerV1, PLAYLISTS_BASE_DIR, sanitize_filename
+
+    target_base = Path(args.output) if args.output else PLAYLISTS_BASE_DIR
+    mgr = PlaylistManagerV1(base_playlists_dir=target_base)
+
+    print("\n" + "=" * 67)
+    print("🔍 Inspecting YouTube Playlist structure via yt-dlp...")
+    print("=" * 67)
+
+    try:
+        limit_val = getattr(args, "limit", 0)
+        limit_arg = limit_val if limit_val and limit_val > 0 else None
+        meta = mgr.inspect_playlist(args.source, limit=limit_arg)
+    except Exception as e:
+        print(f"❌ Error inspecting playlist: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    item_count = meta.get("item_count", 0)
+    if item_count == 0:
+        print(f"⚠️ No video items found in playlist: {args.source}")
+        sys.exit(0)
+
+    clean_title = sanitize_filename(meta.get("title", "Playlist"))
+    target_folder_preview = target_base / f"{meta.get('iso_date')}_{clean_title}"
+
+    # Print Upfront Warning Box
+    print("\n" + "=" * 67)
+    print("⚠️  YOUTUBE PLAYLIST IMPORT DETECTED")
+    print("=" * 67)
+    print(f"  Playlist Title:    {meta.get('title')}")
+    print(f"  Discovered Videos: {item_count} items")
+    print(f"  Est. Total Audio:  {meta.get('total_duration_str')}")
+    print(f"  Target Directory:  {target_folder_preview}")
+    print(f"  Staging Manifest:  playlist_manifest.json ({item_count} placeholder files)")
+    print("=" * 67)
+    print("  NOTICE: Using this will create a dedicated playlist collection")
+    print("  folder on disk, write placeholder files for every single video,")
+    print("  and transcribe each file individually step-by-step.")
+    print("=" * 67)
+
+    if getattr(args, "dry_run", False):
+        print("\n[Dry Run] Video queue to be staged and transcribed:")
+        for it in meta.get("items", []):
+            print(f"  [{it['index']:03d}] {it['title']} ({it['duration_str']}) -> {it['url']}")
+        print("\n[Dry Run complete. No files created.]")
+        return
+
+    if not getattr(args, "yes", False):
+        try:
+            confirm = input("\nProceed with step-by-step transcription? [y/N]: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            print("\nAborted by user.")
+            sys.exit(0)
+        if confirm not in ("y", "yes"):
+            print("Operation cancelled. No folders or files were created.")
+            sys.exit(0)
+
+    print("\n🚀 Staging playlist folder and initializing placeholder files...")
     pipeline = TranscriptionPipelineV6(
         clustering_mode=args.clustering,
-        speaker_library_path=args.library,
+        speaker_library_path=Path(args.library) if getattr(args, "library", None) else None,
+    )
+
+    def on_step_progress(msg: str, pct: int, extra: Dict[str, Any]):
+        print(f"  {msg} ({pct}%)")
+
+    def on_step_item(data: Dict[str, Any]):
+        it = data.get("item", {})
+        if data.get("status") == "completed":
+            res = data.get("result", {})
+            print(f"  ✓ [{it.get('index')}/{item_count}] Finished: {it.get('title')}")
+            print(f"    Exported to: {res.get('iso_output_dir')}")
+        else:
+            print(f"  ❌ [{it.get('index')}/{item_count}] Failed: {it.get('title')} ({data.get('error')})", file=sys.stderr)
+
+    res = pipeline.process_playlist(
+        source=args.source,
+        playbook_name=args.playbook,
+        output_dir=target_base,
+        limit=limit_arg,
+        progress_callback=on_step_progress,
+        item_callback=on_step_item,
+        resume=not getattr(args, "no_resume", False),
+    )
+
+    print("\n" + "=" * 67)
+    print("🎉 Playlist Transcription Run Finished!")
+    manifest = res.get("manifest", {})
+    print(f"Status:    {manifest.get('status')}")
+    print(f"Directory: {res.get('playlist_dir')}")
+    print(f"Manifest:  {res.get('manifest_path')}")
+    print(f"Completed: {manifest.get('completed_count')}/{item_count}")
+    if manifest.get('failed_count', 0) > 0:
+        print(f"Failed:    {manifest.get('failed_count')}/{item_count} (see PLAYLIST_INDEX.md for details)")
+    print("=" * 67)
+
+
+def cmd_batch(args):
+    """Execute batch processing over playlist or directory."""
+    from src.engine.ingest_v4 import MediaIngestorV4
+    ingestor = MediaIngestorV4()
+    meta = ingestor.inspect_source(args.source)
+
+    if meta.get("is_playlist"):
+        return cmd_playlist(args)
+
+    pipeline = TranscriptionPipelineV6(
+        clustering_mode=args.clustering,
+        speaker_library_path=Path(args.library) if getattr(args, "library", None) else None,
     )
     print(f"📦 Universal Transcriber • Batch Processing: {args.source}")
     print(f"Playbook: {args.playbook} | Clustering: {args.clustering.upper()}")
@@ -247,7 +353,10 @@ def cmd_catalog(args):
     )
 
     print(f"📡 Universal Transcriber Catalog Ingestion: {args.source}")
-    items = ingestor.extract_playlist_items(args.source)
+    meta = ingestor.inspect_source(args.source)
+    items = meta.get("items", [])
+    if not items and not meta.get("is_playlist"):
+        items = [{"id": args.source, "title": meta.get("title", "Item"), "url": args.source}]
     print(f"Discovered {len(items)} items from source.")
 
     new_items = []
@@ -426,32 +535,48 @@ def main():
 
     # local
     p_local = subparsers.add_parser("local", help="Transcribe local media file or scan directory (.m4a, .mp3, .mp4, .mov, etc.)")
-    p_local.add_argument("target", help="Local media file or directory to scan")
-    p_local.add_argument("--recursive", "-r", action="store_true", help="Recursively scan subdirectories if target is a folder")
-    p_local.add_argument("--title", "--name", dest="title", help="Custom name/title for single file")
-    p_local.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help="Domain playbook")
-    p_local.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="Clustering mode")
-    p_local.add_argument("--library", help="Path to custom speaker profiles JSON")
-    p_local.add_argument("--output", help="Custom output directory")
+    p_local.add_argument("target", help="[Mandatory] Local media file or directory to scan")
+    p_local.add_argument("--recursive", "-r", action="store_true", help="[Optional] Recursively scan subdirectories if target is a folder")
+    p_local.add_argument("--title", "--name", dest="title", help="[Optional] Custom name/title for single file")
+    p_local.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help=f"[Optional] Category / domain playbook (default: {DEFAULT_PLAYBOOK})")
+    p_local.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="[Optional] Diarization clustering mode (default: ahc)")
+    p_local.add_argument("--library", help="[Optional] Path to custom speaker profiles JSON")
+    p_local.add_argument("--output", help="[Optional] Custom output directory")
     p_local.set_defaults(func=cmd_local)
 
     # transcribe
     p_transcribe = subparsers.add_parser("transcribe", help="Transcribe a video/audio source")
-    p_transcribe.add_argument("input", help="URL or path to media file")
-    p_transcribe.add_argument("--title", "--name", dest="title", help="Custom name/title (formatted to ISO YYYYMMDD_<Title>)")
-    p_transcribe.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help="Domain playbook (e.g. gaming_videos, municipal_meetings)")
-    p_transcribe.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="Clustering mode")
-    p_transcribe.add_argument("--library", help="Path to custom speaker profiles JSON")
-    p_transcribe.add_argument("--output", help="Custom output directory")
+    p_transcribe.add_argument("input", help="[Mandatory] URL or path to media file")
+    p_transcribe.add_argument("--title", "--name", dest="title", help="[Optional] Custom name/title (formatted to ISO YYYYMMDD_<Title>)")
+    p_transcribe.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help=f"[Optional] Category / domain playbook (e.g. general, gaming_videos, municipal_meetings) (default: {DEFAULT_PLAYBOOK})")
+    p_transcribe.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="[Optional] Diarization clustering mode (default: ahc)")
+    p_transcribe.add_argument("--library", help="[Optional] Path to custom speaker profiles JSON")
+    p_transcribe.add_argument("--output", help="[Optional] Custom output directory")
     p_transcribe.set_defaults(func=cmd_transcribe)
+
+    # playlist
+    p_pl = subparsers.add_parser("playlist", help="Break down and transcribe a YouTube playlist step-by-step with manifest staging")
+    p_pl.add_argument("source", help="[Mandatory] YouTube Playlist URL or folder path")
+    p_pl.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help=f"[Optional] Category / domain playbook (default: {DEFAULT_PLAYBOOK})")
+    p_pl.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="[Optional] Diarization clustering mode (default: ahc)")
+    p_pl.add_argument("--library", help="[Optional] Path to custom speaker profiles JSON")
+    p_pl.add_argument("--limit", type=int, default=0, help="[Optional] Max items to process (0 = all)")
+    p_pl.add_argument("--yes", "-y", action="store_true", help="[Optional] Confirm playlist staging without interactive prompt")
+    p_pl.add_argument("--dry-run", action="store_true", help="[Optional] Inspect playlist and list all videos without processing")
+    p_pl.add_argument("--no-resume", action="store_true", help="[Optional] Re-process completed videos instead of resuming")
+    p_pl.add_argument("--output", help="[Optional] Custom parent directory for playlist folder")
+    p_pl.set_defaults(func=cmd_playlist)
 
     # batch
     p_batch = subparsers.add_parser("batch", help="Batch process a playlist or directory")
-    p_batch.add_argument("source", help="Playlist URL or directory path")
-    p_batch.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help="Domain playbook")
-    p_batch.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="Clustering mode")
-    p_batch.add_argument("--library", help="Path to custom speaker profiles JSON")
-    p_batch.add_argument("--output", help="Custom output directory")
+    p_batch.add_argument("source", help="[Mandatory] Playlist URL or directory path")
+    p_batch.add_argument("--playbook", default=DEFAULT_PLAYBOOK, help=f"[Optional] Category / domain playbook (default: {DEFAULT_PLAYBOOK})")
+    p_batch.add_argument("--clustering", choices=["ahc", "online"], default="ahc", help="[Optional] Diarization clustering mode (default: ahc)")
+    p_batch.add_argument("--library", help="[Optional] Path to custom speaker profiles JSON")
+    p_batch.add_argument("--limit", type=int, default=0, help="[Optional] Max items to process (0 = all)")
+    p_batch.add_argument("--yes", "-y", action="store_true", help="[Optional] Confirm playlist staging without interactive prompt")
+    p_batch.add_argument("--dry-run", action="store_true", help="[Optional] Inspect playlist and list all videos without processing")
+    p_batch.add_argument("--output", help="[Optional] Custom output directory")
     p_batch.set_defaults(func=cmd_batch)
 
     # audit

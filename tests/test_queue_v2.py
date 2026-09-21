@@ -45,6 +45,20 @@ class TestQueueV2(unittest.TestCase):
             self.assertEqual(completed["status"], STATUS_COMPLETED)
             self.assertEqual(completed["result"]["files"]["md"], "/tmp/out.md")
 
+    def test_clear_all_jobs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "test_queue_clear.sqlite"
+            queue = JobQueue(db_path=db_path)
+
+            queue.enqueue("job_a", "https://youtube.com/watch?v=1", title="Job A")
+            queue.enqueue("job_b", "https://youtube.com/watch?v=2", title="Job B")
+            self.assertEqual(len(queue.list_jobs()), 2)
+
+            cleared = queue.clear_all_jobs()
+            self.assertEqual(cleared, 2)
+            self.assertEqual(len(queue.list_jobs()), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

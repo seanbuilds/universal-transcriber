@@ -83,4 +83,4 @@ ALLOWED_CORS_ORIGINS = [
 ]
 
 # Default Playbook
-DEFAULT_PLAYBOOK = "general_speech"
+DEFAULT_PLAYBOOK = "general"

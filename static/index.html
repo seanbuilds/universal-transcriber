@@ -7,146 +7,705 @@
   <title>Universal Transcriber v0.1-beta • @seanbuilds</title>
   <style>
     :root {
-      --bg: #0b0d14;
-      --card: #151824;
-      --card-alt: #1a1e2e;
-      --border: #262c40;
+      --bg: #090c15;
+      --card: #131724;
+      --card-alt: #181e2f;
+      --border: #232a3e;
+      --border-subtle: #1a2134;
+      --border-focus: #6366f1;
       --accent: #6366f1;
       --accent-hover: #4f46e5;
-      --text: #e2e8f0;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --text: #f1f5f9;
       --muted: #94a3b8;
+      --muted-dark: #64748b;
       --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
       --warning: #f59e0b;
       --danger: #ef4444;
       --active-spk: #38bdf8;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    .container { width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 20px; }
-    .header { text-align: center; margin-bottom: 4px; }
-    .header h1 { font-size: 2.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .card-title { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+    body {
+      background: radial-gradient(circle at 50% 0%, #171d31 0%, var(--bg) 60%);
+      color: var(--text);
+      padding: 36px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .header { text-align: center; margin-bottom: 8px; }
+    .header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .badge-version {
+      font-size: 0.88rem;
+      font-weight: 700;
+      vertical-align: middle;
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      letter-spacing: 0.5px;
+    }
+    .badge-author {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 4px 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #a5b4fc;
+    }
+    .header p {
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 0.92rem;
+      letter-spacing: 0.2px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.2s;
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
     .input-group { display: flex; flex-direction: column; gap: 14px; }
-    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    label { font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    input[type="text"], select { background: #0c0f19; border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
-    input[type="text"]:focus, select:focus { border-color: var(--accent); }
-    .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 11px 18px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 6px; }
-    .btn:hover { background: var(--accent-hover); }
-    .btn:disabled { background: var(--border); color: #64748b; cursor: not-allowed; }
-    .btn-clear { background: #1e2436; color: #cbd5e1; border: 1px solid var(--border); }
-    .btn-clear:hover { background: #2a3147; color: #f87171; border-color: #ef4444; }
-    .btn-sm { padding: 6px 12px; font-size: 0.82rem; border-radius: 6px; }
-    .telemetry-header { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 10px; }
-    .speaker-badge { background: #1e293b; color: var(--active-spk); border: 1px solid #334155; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
-    .stage-badge { background: #0f172a; color: #34d399; border: 1px solid #064e3b; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; }
-    .progress-bar-container { width: 100%; background: #0c0f19; border-radius: 8px; height: 10px; overflow: hidden; margin-top: 12px; display: none; }
-    .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7); transition: width 0.3s ease; }
-    .status-text { font-size: 0.88rem; color: var(--muted); margin-top: 8px; }
-    .streaming-window { background: #08090f; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; height: 260px; overflow-y: auto; display: none; font-size: 0.88rem; line-height: 1.6; }
-    .segment-item { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #161a29; animation: fadeIn 0.25s ease-in; }
-    .segment-ts { color: var(--accent); font-weight: 600; margin-right: 8px; font-family: monospace; font-size: 0.82rem; }
-    .segment-speaker { color: var(--active-spk); font-weight: 600; margin-right: 8px; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
-    .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-    .tab-btn { background: transparent; color: var(--muted); border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 500; }
-    .tab-btn.active { color: #fff; background: var(--border); }
-    pre.output-view { background: #08090f; border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: #cbd5e1; font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace; font-size: 0.88rem; line-height: 1.5; max-height: 440px; overflow-y: auto; white-space: pre-wrap; }
-    .actions-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-    .iso-banner { background: #131b2e; border: 1px solid #2563eb; color: #93c5fd; padding: 8px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 8px; }
-    .audit-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.84rem; }
-    .audit-table th, .audit-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #1e2438; }
-    .audit-table th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
-    .audit-row-clickable:hover { background: #1a2035; }
-    .pill { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-    .pill-completed { background: #064e3b; color: #34d399; }
-    .pill-failed { background: #450a0a; color: #f87171; }
-    .pill-cancelled { background: #3b2a1a; color: #fbbf24; }
-    .pill-processing { background: #1e1b4b; color: #818cf8; }
-    .pill-submitted { background: #1e293b; color: #94a3b8; }
-    .metrics-bar { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
-    .metric-item { background: #0c0f19; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: flex; flex-direction: column; min-width: 100px; }
-    .metric-val { font-size: 1.2rem; font-weight: 700; color: #fff; }
-    .metric-lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; }
-    .dropzone { border: 2px dashed #334155; border-radius: 10px; padding: 22px 16px; text-align: center; background: #0c101c; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-    .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: #13192e; }
-    .file-badge { display: inline-flex; align-items: center; gap: 8px; background: #161e31; border: 1px solid #2d3b5b; border-radius: 8px; padding: 8px 14px; font-size: 0.86rem; color: #cbd5e1; }
-    .file-badge-fmt { background: #3b82f6; color: #fff; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.76rem; text-transform: uppercase; }
+    .label-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .badge-mandatory {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    .badge-optional {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    .badge-default {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    input[type="text"], select {
+      background: #0c0f1a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .dropzone {
+      background: #0d111d;
+      border: 2px dashed #2d374f;
+      border-radius: var(--radius-md);
+      padding: 26px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .dropzone:hover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    .dropzone.dragover {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      transform: scale(1.005);
+    }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 8px 0;
+      color: var(--muted-dark);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .or-divider span {
+      padding: 0 14px;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 4px;
+    }
+    @media (max-width: 860px) {
+      .config-grid { grid-template-columns: 1fr; }
+    }
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      margin-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0d111d;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      line-height: 1.2;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled {
+      background: var(--border);
+      color: #64748b;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .btn-clear {
+      background: #181e2e;
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+    }
+    .btn-clear:hover {
+      background: #232b42;
+      color: #fff;
+      border-color: #3b4668;
+      box-shadow: none;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      border-radius: 6px;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: #ffffff;
+      border: 1px solid #ef4444;
+    }
+    .btn-danger:hover {
+      background: #b91c1c;
+      border-color: #f87171;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    .telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: #0d1220;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .speaker-badge {
+      background: #162238;
+      color: var(--active-spk);
+      border: 1px solid #233555;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .stage-badge {
+      background: #0e1e1e;
+      color: #34d399;
+      border: 1px solid #144e3b;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .progress-bar-container {
+      width: 100%;
+      background: #0c0f1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+      display: none;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a855f7);
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    }
+    .status-text { font-size: 0.88rem; color: var(--muted); }
+    .streaming-window {
+      background: #080a12;
+      border: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      padding: 16px;
+      height: 280px;
+      overflow-y: auto;
+      display: none;
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+    .segment-item {
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #141926;
+      animation: fadeIn 0.25s ease-in;
+    }
+    .segment-ts {
+      color: var(--accent);
+      font-weight: 600;
+      margin-right: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+    .segment-speaker {
+      color: var(--active-spk);
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(2px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: #141928;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      background: #1e263d;
+      color: #fff;
+    }
+    .tab-btn.active {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+    pre.output-view {
+      background: #080a12;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      color: #cbd5e1;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      max-height: 440px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .actions-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .actions-row a {
+      text-decoration: none;
+      display: flex;
+    }
+    .actions-row a .btn {
+      width: 100%;
+    }
+    .iso-banner {
+      background: #131b2e;
+      border: 1px solid #2563eb;
+      color: #93c5fd;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0d111d;
+    }
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+    .audit-table th, .audit-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #1a2135;
+    }
+    .audit-table th {
+      background: #101524;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+    }
+    .audit-table tbody tr:hover { background: #141a2c; }
+    .audit-row-clickable:hover { background: #172036 !important; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .pill-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .pill-cancelled { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-processing { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .pill-submitted { background: #182033; color: #94a3b8; border: 1px solid #283552; }
+    .pill-pending { background: #182033; color: #94a3b8; border: 1px solid #283552; }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric-item {
+      background: #0d111d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .metric-item:hover {
+      border-color: #333e5c;
+      transform: translateY(-1px);
+    }
+    .metric-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .metric-lbl {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .file-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #141b2e;
+      border: 1px solid #243252;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.86rem;
+      color: #cbd5e1;
+    }
+    dialog.modal {
+      background: #141828;
+      border: 1px solid #2d3752;
+      border-radius: 16px;
+      color: var(--text);
+      padding: 28px;
+      max-width: 640px;
+      width: 90%;
+      margin: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+    }
+    dialog.modal::backdrop {
+      background: rgba(4, 6, 12, 0.8);
+      backdrop-filter: blur(6px);
+    }
+    .warning-box {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid #d97706;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      color: #fef3c7;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .file-badge-fmt {
+      background: #3b82f6;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+    }
+    .card-danger-zone {
+      margin-top: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: linear-gradient(180deg, #180d12 0%, #11070b 100%);
+    }
+    .card-danger-zone .card-title {
+      color: #f87171;
+      border-bottom: 1px solid rgba(239, 68, 68, 0.15);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #080a12; }
+    ::-webkit-scrollbar-thumb { background: #232b42; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #374466; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎙️ Universal Transcriber <span style="font-size: 0.95rem; font-weight: 700; vertical-align: middle; padding: 2px 10px; border-radius: 12px; background: #059669; color: #ecfdf5; border: 1px solid #10b981; letter-spacing: 0.5px;">v0.1-beta</span></h1>
-      <div style="display: inline-block; margin-top: 5px; padding: 3px 12px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; font-size: 0.82rem; font-weight: 600; color: #a5b4fc;">
+      <h1>🎙️ Universal Transcriber <span class="badge-version">v0.1-beta</span></h1>
+      <div class="badge-author">
         Engineered by @seanbuilds
       </div>
-      <p style="margin-top: 8px;">Apple Silicon Metal Streaming ASR • Local Media Dropzone (.m4a, .mp3, .mp4, .mov, .wav) • Persistent Audit Logs • ISO-8601 Naming</p>
+      <p>Apple Silicon Metal Streaming ASR • Local Media Dropzone (.m4a, .mp3, .mp4, .mov, .wav) • Persistent Audit Logs • ISO-8601 Naming</p>
     </div>
 
     <!-- Transcription Input Card -->
     <div class="card">
       <div class="card-title">
-        <span>Transcribe New Recording</span>
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span>⚡ Transcribe New Recording</span>
+        </span>
         <button id="clearBtn" class="btn btn-clear btn-sm" onclick="clearEverything()" title="Reset all fields, disconnect live stream, and start fresh">
           🔄 Clear / Start Over
         </button>
       </div>
 
       <div class="input-group">
+        <!-- Local Media Dropzone -->
         <div>
-          <label>Local Audio / Video File (.m4a, .mp3, .mp4, .mov, .mkv, .wav, .flac)</label>
-          <div id="dropZone" class="dropzone" style="margin-top: 6px;" onclick="document.getElementById('fileInput').click()">
+          <div class="label-bar">
+            <label>Option A: Local Media Ingestion (File or Entire Folder) <span class="badge-mandatory">Mandatory (Option A or B)</span></label>
+            <span style="font-size: 0.74rem; color: var(--muted-dark); font-weight: 500;">Apple Silicon Metal Accelerated</span>
+          </div>
+          <div id="dropZone" class="dropzone">
             <input type="file" id="fileInput" style="display: none;" accept=".m4a,.mp3,.mp4,.mov,.mkv,.wav,.flac,.aac,.webm,.ogg,.opus" onchange="handleFileSelect(this.files)">
+            <input type="file" id="folderInput" style="display: none;" webkitdirectory directory multiple onchange="handleFolderSelect(this.files)">
             <div id="dropZonePrompt">
-              <span style="font-size: 1.6rem;">📂</span>
-              <div style="font-weight: 600; font-size: 0.95rem; margin-top: 4px;">Click to Browse or Drag &amp; Drop Local Media File</div>
-              <div style="color: var(--muted); font-size: 0.8rem; margin-top: 2px;">Supports .m4a, .mp3, .mp4, .mov, .mkv, .wav, .flac, .aac, .webm</div>
+              <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">📂</span>
+              <div style="font-weight: 600; font-size: 1rem; color: #f1f5f9; margin-bottom: 12px;">Drag &amp; Drop Local Media Here, or Choose an Option:</div>
+              <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px;">
+                <button type="button" class="btn" onclick="document.getElementById('fileInput').click()" style="padding: 9px 18px; font-weight: 600; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 8px;">
+                  📄 Select a File
+                </button>
+                <button type="button" class="btn btn-clear" onclick="document.getElementById('folderInput').click()" style="padding: 9px 18px; font-weight: 600; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--accent); color: #c7d2fe; background: rgba(99, 102, 241, 0.08);">
+                  📁 Select a Folder (Batch Transcribe)
+                </button>
+              </div>
+              <div style="color: var(--muted); font-size: 0.82rem; margin-top: 6px;">
+                Select a single recording or an entire directory of files • <strong>Mandatory</strong> if no URL or system path provided below
+              </div>
             </div>
-            <div id="uploadStatus" style="display: none; align-items: center; gap: 8px; color: var(--accent); font-size: 0.88rem;">
-              <span>⏳ Uploading media file to local workspace...</span>
+            <div id="uploadStatus" style="display: none; align-items: center; justify-content: center; gap: 8px; color: var(--accent); font-size: 0.88rem;">
+              <span>⏳ Uploading media to local workspace...</span>
             </div>
           </div>
-          <div id="fileInfoBadge" style="display: none; margin-top: 8px;"></div>
+          <div id="fileInfoBadge" style="display: none; margin-top: 10px;"></div>
         </div>
 
+        <!-- OR Divider -->
+        <div class="or-divider">
+          <span>OR Option B: Enter Direct Media URL / System Path</span>
+        </div>
+
+        <!-- URL / File Path Input -->
         <div>
-          <label style="font-size: 0.78rem; color: var(--muted);">OR Direct Media URL / System Path</label>
-          <input type="text" id="sourceInput" style="width: 100%; margin-top: 4px;" placeholder="https://www.youtube.com/watch?v=... or /Users/.../recording.mp4">
+          <div class="label-bar">
+            <label>Option B: Media URL or Local File Path <span class="badge-mandatory">Mandatory (If No Upload Above)</span></label>
+            <button class="btn btn-sm btn-clear" onclick="copyInputUrl(this)" title="Copy URL in box">📋 Copy URL</button>
+          </div>
+          <input type="text" id="sourceInput" placeholder="https://www.youtube.com/watch?v=... or /Users/.../recording.mp4 (Mandatory if no file or folder selected above)">
         </div>
 
-        <div class="input-row">
-          <div style="flex: 1.5; min-width: 260px;">
-            <label>Custom Name / Title (Formatted as ISO YYYYMMDD_&lt;Name&gt;)</label>
-            <input type="text" id="customNameInput" style="width: 100%; margin-top: 4px;" placeholder="e.g. Speedrun_Championship or Team_Scrim">
+        <!-- Configuration Grid -->
+        <div class="config-grid">
+          <div>
+            <div class="label-bar">
+              <label>Custom Name / Title <span class="badge-optional">Optional</span></label>
+              <button class="btn btn-sm btn-clear" onclick="copyInputName(this)" title="Copy name in box">📋 Copy Name</button>
+            </div>
+            <input type="text" id="customNameInput" placeholder="Optional (defaults to YouTube title or filename)">
           </div>
 
-          <div style="flex: 1; min-width: 200px;">
-            <label>Domain Playbook</label>
-            <select id="playbookSelect" style="width: 100%; margin-top: 4px;">
-              <option value="gaming_videos" selected>🎮 Gaming Videos & Esports</option>
+          <div>
+            <div class="label-bar">
+              <label>Category / Domain Playbook <span class="badge-optional">Optional</span> <span class="badge-default">Default: General</span></label>
+            </div>
+            <select id="playbookSelect">
+              <option value="general" selected>🌐 General (Default)</option>
+              <option value="gaming_videos">🎮 Gaming Videos &amp; Esports</option>
               <option value="municipal_meetings">🏛️ Municipal Meetings</option>
-              <option value="interview_podcast">🎙️ Interview & Podcast</option>
+              <option value="interview_podcast">🎙️ Interview &amp; Podcast</option>
               <option value="corporate_meeting">💼 Corporate Meeting</option>
               <option value="academic_lecture">🎓 Academic Lecture</option>
               <option value="general_speech">🗣️ General Speech</option>
             </select>
           </div>
 
-          <div style="flex: 1; min-width: 180px;">
-            <label>Diarization Mode</label>
-            <select id="clusteringSelect" style="width: 100%; margin-top: 4px;">
-              <option value="ahc">AHC Diarization (Two-Pass)</option>
+          <div>
+            <div class="label-bar">
+              <label>Diarization Mode <span class="badge-optional">Optional</span> <span class="badge-default">Default: AHC</span></label>
+            </div>
+            <select id="clusteringSelect">
+              <option value="ahc" selected>AHC Diarization (Two-Pass) [Default]</option>
               <option value="online">Online Leader Diarization</option>
             </select>
-          </div>
-
-          <div style="display: flex; align-items: flex-end;">
-            <button id="startBtn" class="btn" style="height: 44px; margin-top: 4px;" onclick="startTranscription()">
-              ⚡ Transcribe
-            </button>
           </div>
         </div>
 
@@ -159,10 +718,35 @@
         <div class="progress-bar-container" id="progressContainer">
           <div class="progress-bar" id="progressBar"></div>
         </div>
-        <div class="status-text" id="statusText">Ready</div>
 
-        <!-- Live Streaming ASR Window -->
-        <div class="streaming-window" id="streamingWindow"></div>
+        <!-- Action Bar / Card Footer -->
+        <div class="action-bar">
+          <div class="status-badge" id="statusBadge">
+            <span class="status-dot"></span>
+            <span class="status-text" id="statusText">Ready</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="copyCliBtn" class="btn btn-clear" onclick="copyCliCommandFromInputs(this)" title="Copy terminal command to clipboard">
+              📋 Copy Command
+            </button>
+            <button id="startBtn" class="btn" style="min-width: 140px;" onclick="startTranscription()">
+              ⚡ Transcribe
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Streaming ASR Window Header -->
+        <div id="streamingHeaderBox" style="display:none; background: #0c101c; border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; padding: 10px 14px; margin-top: 14px; font-size: 0.84rem; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%;">
+            <span style="color:var(--muted);">Meeting / Transcript:</span> <strong id="streamMeetingTitle" style="color:#fff;">-</strong>
+            <span style="color:var(--border); margin: 0 8px;">•</span>
+            <span style="color:var(--muted);">YouTube / Media URL:</span> <span id="streamMediaUrl" style="color:var(--accent); font-family: monospace;">-</span>
+          </div>
+          <button class="btn btn-sm btn-clear" onclick="copyStreamingWindowText(this)" title="Copy all live streamed text">
+            📋 Copy Live Stream
+          </button>
+        </div>
+        <div class="streaming-window" id="streamingWindow" style="margin-top: 0;"></div>
       </div>
     </div>
 
@@ -173,6 +757,56 @@
         <div id="isoTag" class="iso-banner" style="margin-bottom:0;"></div>
       </div>
 
+      <!-- Prominent Meeting & YouTube URL Details Box with One-Click Copy Commands -->
+      <div id="resultsInfoBox" style="background: #0d1222; border: 1px solid #1e2a4a; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
+          <div style="flex: 1; min-width: 280px;">
+            <div style="font-size: 0.76rem; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: 0.5px;">
+              Meeting / Transcript Name
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+              <span id="resMeetingName" style="font-size: 1.08rem; font-weight: 700; color: #fff;">-</span>
+              <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.74rem;" onclick="copyMeetingName(this)" title="Copy meeting name">📋 Copy Name</button>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 280px;">
+            <div style="font-size: 0.76rem; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: 0.5px;">
+              YouTube / Media URL
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+              <a id="resSourceUrl" href="#" target="_blank" style="font-size: 0.88rem; color: var(--accent); font-family: monospace; word-break: break-all; text-decoration: underline;">-</a>
+              <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.74rem; white-space: nowrap;" onclick="copySourceUrl(this)" title="Copy YouTube URL">📋 Copy URL</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid #1a233d; padding-top: 10px; font-size: 0.82rem; color: var(--muted);">
+          <div>
+            <strong>Output Folder:</strong> <code id="resFolder" style="color: #cbd5e1;">-</code>
+            <span style="color: var(--border); margin: 0 6px;">•</span>
+            <strong>Duration:</strong> <span id="resDuration" style="color: #cbd5e1;">-</span>
+            <span style="color: var(--border); margin: 0 6px;">•</span>
+            <strong>Playbook:</strong> <span id="resPlaybook" style="color: #cbd5e1;">-</span>
+          </div>
+          <!-- Copy Commands Toolbar -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-sm" onclick="copyAllInfo(this)" style="font-weight: 600;" title="Copy complete summary including meeting name, YouTube URL, and active transcript">
+              📋 Copy All Info
+            </button>
+            <button class="btn btn-sm btn-clear" onclick="copyActiveTranscript(this)" title="Copy active transcript text box">
+              📋 Copy Transcript
+            </button>
+            <button class="btn btn-sm btn-clear" onclick="copyCliCommandFromResult(this)" title="Copy reproducible CLI command">
+              📋 Copy Command
+            </button>
+            <button class="btn btn-sm btn-clear" onclick="populateInputsFromResult(this)" title="Fill meeting name and YouTube URL into top input boxes">
+              📥 Copy into Input Boxes
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="tabs">
         <button class="tab-btn active" onclick="showTab('txt')">Plaintext</button>
         <button class="tab-btn" onclick="showTab('md')">Markdown</button>
@@ -181,7 +815,21 @@
         <button class="tab-btn" onclick="showTab('docx')">Word Doc (.docx)</button>
         <button class="tab-btn" onclick="showTab('json')">JSON Data</button>
       </div>
-      <pre class="output-view" id="transcriptView"></pre>
+
+      <!-- Transcript Box Header with Meeting Name & YouTube URL -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #080a12; border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; padding: 8px 14px; font-size: 0.82rem; flex-wrap: wrap; gap: 8px;">
+        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
+          <span style="color: var(--muted);">Meeting / Transcript:</span> <strong id="boxMeetingName" style="color: #fff;">-</strong>
+          <span style="color: var(--border); margin: 0 6px;">•</span>
+          <span style="color: var(--muted);">Source / URL:</span> <span id="boxSourceUrl" style="color: var(--accent); font-family: monospace;">-</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-sm" style="padding: 4px 10px; font-size: 0.78rem;" onclick="copyActiveTranscript(this)" title="Copy current transcript text">
+            📋 Copy Box Content
+          </button>
+        </div>
+      </div>
+      <pre class="output-view" id="transcriptView" style="margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0;"></pre>
       <div class="actions-row">
         <a id="downloadTxt" download><button class="btn">Download .txt</button></a>
         <a id="downloadMd" download><button class="btn">Download .md</button></a>
@@ -189,6 +837,146 @@
         <a id="downloadVtt" download><button class="btn">Download .vtt</button></a>
         <a id="downloadDocx" download><button class="btn">Download .docx</button></a>
         <a id="downloadJson" download><button class="btn btn-clear">Download .json</button></a>
+      </div>
+
+      <!-- Dedicated Local Folder & Files Display (Created Strictly After All Steps Succeeded) -->
+      <div id="localFilesBox" style="margin-top: 16px; background: #0b0f1d; border: 1px solid #1e2942; border-radius: 8px; padding: 14px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong style="color: #38bdf8; font-size: 0.95rem;">📁 Dedicated Local Folder on Disk</strong>
+            <span style="font-size: 0.78rem; color: var(--muted); margin-left: 8px;">(Created after all steps completed • 100% Local Files)</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm" onclick="openCurrentLocalFolder(this)" style="font-weight: 600;" title="Open folder directly in macOS Finder">
+              📂 Reveal in Finder
+            </button>
+            <button class="btn btn-sm btn-clear" onclick="copyCurrentLocalFolder(this)" title="Copy folder path to clipboard">
+              📋 Copy Folder Path
+            </button>
+          </div>
+        </div>
+
+        <div style="background: #060810; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-family: monospace; font-size: 0.84rem; color: #f1f5f9; word-break: break-all; margin-bottom: 12px;">
+          <span id="localFolderDisplay">-</span>
+        </div>
+
+        <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">
+          All 6 Offered File Formats (Locally Generated on Disk)
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px;">
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">Markdown (.md)</strong>
+              <div id="fileDisplayMd" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('md', this)" title="Copy file path">📋</button>
+          </div>
+
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">Plaintext (.txt)</strong>
+              <div id="fileDisplayTxt" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('txt', this)" title="Copy file path">📋</button>
+          </div>
+
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">Subtitles (.srt)</strong>
+              <div id="fileDisplaySrt" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('srt', this)" title="Copy file path">📋</button>
+          </div>
+
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">WebVTT (.vtt)</strong>
+              <div id="fileDisplayVtt" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('vtt', this)" title="Copy file path">📋</button>
+          </div>
+
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">Word Document (.docx)</strong>
+              <div id="fileDisplayDocx" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('docx', this)" title="Copy file path">📋</button>
+          </div>
+
+          <div style="background: #111625; padding: 8px 10px; border-radius: 6px; border: 1px solid #1b233a; display: flex; justify-content: space-between; align-items: center;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">
+              <strong style="color: #e2e8f0; font-size: 0.82rem;">Structured JSON (.json)</strong>
+              <div id="fileDisplayJson" style="font-family: monospace; font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis;">-</div>
+            </div>
+            <button class="btn btn-sm btn-clear" style="padding: 2px 6px; font-size: 0.72rem;" onclick="copySingleFilePath('json', this)" title="Copy file path">📋</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Playlist Collection Tracking Card -->
+    <div class="card" id="playlistTrackerCard" style="display:none; border-color: var(--accent);">
+      <div class="card-title">
+        <span id="plTrackerHeader">📺 Playlist Transcription Staging</span>
+        <button class="btn btn-clear btn-sm" onclick="refreshPlaylistTracker()">🔄 Refresh Manifest</button>
+      </div>
+      <div class="warning-box" id="plTrackerNotice" style="margin-bottom: 14px;">
+        <strong>Playlist Staging Active:</strong> Dedicated collection folder created with master manifest and placeholder files. Transcribing videos sequentially.
+      </div>
+      <div class="metrics-grid" id="plMetricsBar" style="margin-bottom: 14px;">
+        <div class="metric-item">
+          <span class="metric-val" id="plMetricTotal">0</span>
+          <span class="metric-lbl">Total Videos</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-val" id="plMetricCompleted" style="color:var(--success);">0</span>
+          <span class="metric-lbl">Completed</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-val" id="plMetricFailed" style="color:var(--danger);">0</span>
+          <span class="metric-lbl">Failed</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-val" id="plMetricPending" style="color:#94a3b8;">0</span>
+          <span class="metric-lbl">Pending</span>
+        </div>
+      </div>
+      <div style="background: #0d1222; border: 1px solid #1e2a4a; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; font-size: 0.84rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div>
+            <strong>Playlist / Meeting Series:</strong> <span id="plTrackerTitle" style="color: #fff; font-weight: 600;">-</span>
+            <span style="color: var(--border); margin: 0 6px;">•</span>
+            <strong>YouTube URL:</strong> <a id="plTrackerUrl" href="#" target="_blank" style="color: var(--accent); font-family: monospace; text-decoration: underline;">-</a>
+          </div>
+          <div style="margin-top: 4px; color: var(--muted);">
+            <strong>Folder:</strong> <code id="plTrackerDir" style="color: #cbd5e1;">-</code>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-clear" onclick="copyPlaylistUrl(this)" title="Copy YouTube playlist URL">📋 Copy URL</button>
+          <button class="btn btn-sm" onclick="copyPlaylistAllInfo(this)" title="Copy playlist title, URL, and manifest details">📋 Copy All Info</button>
+        </div>
+      </div>
+      <div class="progress-bar-container" id="plProgressContainer" style="display:block; margin-bottom: 14px;">
+        <div class="progress-bar" id="plProgressBar" style="width: 0%;"></div>
+      </div>
+      <div class="table-container" style="max-height: 320px; overflow-y: auto;">
+        <table class="audit-table" style="margin-top: 0;">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Video Title</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Outputs</th>
+            </tr>
+          </thead>
+          <tbody id="plTrackerTableBody">
+            <tr><td colspan="5" style="text-align:center; color:var(--muted); padding: 16px;">Staging playlist queue...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -199,7 +987,7 @@
         <button class="btn btn-clear btn-sm" onclick="loadAuditSummary()">🔄 Refresh Audit Trail</button>
       </div>
 
-      <div class="metrics-bar" id="metricsBar">
+      <div class="metrics-grid" id="metricsBar">
         <div class="metric-item">
           <span class="metric-val" id="metricTotal">0</span>
           <span class="metric-lbl">Total Attempts</span>
@@ -222,7 +1010,7 @@
         </div>
       </div>
 
-      <div style="overflow-x: auto;">
+      <div class="table-container">
         <table class="audit-table">
           <thead>
             <tr>
@@ -230,17 +1018,174 @@
               <th>Created (UTC)</th>
               <th>Status</th>
               <th>Playbook</th>
-              <th>ISO Filename / Title</th>
+              <th>Meeting / Transcript Name</th>
+              <th>YouTube URL / Source</th>
               <th>Usage</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody id="auditTableBody">
-            <tr><td colspan="7" style="color:var(--muted); text-align:center; padding:16px;">Loading audit logs...</td></tr>
+            <tr><td colspan="8" style="color:var(--muted); text-align:center; padding:20px;">Loading audit logs...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    <!-- Danger Zone Card -->
+    <div class="card card-danger-zone">
+      <div class="card-title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span>🚨 Danger Zone</span>
+        </span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="max-width: 720px;">
+          <strong style="color: #fca5a5; font-size: 1rem; display: block; margin-bottom: 4px;">Clear UI Project History</strong>
+          <p style="color: var(--muted); font-size: 0.88rem; line-height: 1.55; margin: 0;">
+            Remove all previously worked-on projects and job logs from this web dashboard.
+            <span style="color: #6ee7b7; font-weight: 600;">Your transcript folders and files on disk will NOT be removed</span> — only to be used if refreshing your entire history.
+          </p>
+        </div>
+        <div>
+          <button id="dangerClearBtn" class="btn btn-danger" onclick="promptClearHistory()" style="white-space: nowrap; font-weight: 700; padding: 11px 20px;">
+            🗑️ Clear History
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone Clear History Confirmation Modal Dialog -->
+    <dialog id="clearHistoryModal" class="modal" style="max-width: 520px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 8px; margin: 0;">
+          ⚠️ Are you sure?
+        </h2>
+        <button class="btn btn-clear btn-sm" onclick="document.getElementById('clearHistoryModal').close()" style="border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="background: rgba(220, 38, 38, 0.12); border: 1px solid #dc2626; border-radius: 8px; padding: 14px; margin-bottom: 16px; color: #fecaca; font-size: 0.88rem; line-height: 1.5;">
+        <strong>Warning:</strong> This will clear all previously worked-on projects from the dashboard interface and reset metric counters.
+      </div>
+
+      <div style="background: #0c0f19; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">
+        🔒 <strong style="color: #6ee7b7;">Safe on Disk:</strong> The folders for your files will <strong>not</strong> be removed from your disk. Only the UI history records and database entries will be cleared.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-clear" onclick="document.getElementById('clearHistoryModal').close()">Cancel</button>
+        <button id="confirmClearHistoryBtn" class="btn btn-danger" onclick="confirmClearHistory()" style="font-weight: 700;">
+          Yes, Clear History
+        </button>
+      </div>
+    </dialog>
+
+    <!-- YouTube Playlist Staging Confirmation Modal Dialog -->
+    <dialog id="playlistModal" class="modal">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          ⚠️ YouTube Playlist Import
+        </h2>
+        <button class="btn btn-clear btn-sm" onclick="document.getElementById('playlistModal').close()" style="border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div class="warning-box">
+        <strong>Notice:</strong> This YouTube URL is a playlist containing <span id="plModalCount" style="font-weight:700; color:#38bdf8;">0</span> videos.
+        Importing it will create a dedicated playlist collection directory on disk with placeholder files for every video, and transcribe each item step-by-step.
+      </div>
+
+      <div style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; background: #0c0f19; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div><strong style="color: var(--muted);">Meeting / Playlist Name:</strong> <strong id="plModalTitle" style="color: #fff;">-</strong></div>
+          <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.75rem;" onclick="copyPlModalName(this)" title="Copy Playlist Name">📋 Copy Name</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"><strong style="color: var(--muted);">YouTube Playlist URL:</strong> <span id="plModalUrl" style="font-family: monospace; color: var(--accent);">-</span></div>
+          <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.75rem;" onclick="copyPlModalUrl(this)" title="Copy Playlist URL">📋 Copy URL</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div><strong style="color: var(--muted);">Estimated Audio:</strong> <span id="plModalDuration">-</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"><strong style="color: var(--muted);">Target Directory:</strong> <code id="plModalDir" style="color: var(--accent);">-</code></div>
+          <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.75rem;" onclick="copyPlModalDir(this)" title="Copy Directory Path">📋 Copy Path</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">
+        Videos in Playlist (0% missed — placeholders staged)
+      </div>
+      <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+          <thead style="background: #141926; position: sticky; top: 0;">
+            <tr>
+              <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); width: 40px;">#</th>
+              <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border);">Title</th>
+              <th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); width: 80px;">Duration</th>
+            </tr>
+          </thead>
+          <tbody id="plModalTableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-clear" onclick="document.getElementById('playlistModal').close()">Cancel</button>
+        <button id="plModalConfirmBtn" class="btn" onclick="confirmStartPlaylist()">
+          ⚡ Confirm &amp; Transcribe Step-by-Step
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Folder Batch Staging Confirmation Modal Dialog -->
+    <dialog id="folderModal" class="modal">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          📁 Local Folder Batch Transcription
+        </h2>
+        <button class="btn btn-clear btn-sm" onclick="document.getElementById('folderModal').close()" style="border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div class="warning-box">
+        <strong>Notice:</strong> This folder contains <span id="folderModalCount" style="font-weight:700; color:#38bdf8;">0</span> media files.
+        Importing it will create a dedicated batch collection directory on disk with placeholder files for every file, and sequentially transcribe each file step-by-step into its own dedicated folder with all 6 output formats (.md, .txt, .srt, .vtt, .docx, .json).
+      </div>
+
+      <div style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; background: #0c0f19; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div><strong style="color: var(--muted);">Folder / Batch Name:</strong> <strong id="folderModalTitle" style="color: #fff;">-</strong></div>
+          <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.75rem;" onclick="copyTextToClipboard(document.getElementById('folderModalTitle').innerText, this)" title="Copy Folder Name">📋 Copy Name</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div><strong style="color: var(--muted);">Media Content:</strong> <span id="folderModalAudio">-</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"><strong style="color: var(--muted);">Target Directory:</strong> <code id="folderModalDir" style="color: var(--accent);">-</code></div>
+          <button class="btn btn-sm btn-clear" style="padding: 2px 8px; font-size: 0.75rem;" onclick="copyTextToClipboard(document.getElementById('folderModalDir').innerText, this)" title="Copy Directory Path">📋 Copy Path</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;">
+        Files in Folder (0% missed — placeholders staged)
+      </div>
+      <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+          <thead style="background: #141926; position: sticky; top: 0;">
+            <tr>
+              <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); width: 40px;">#</th>
+              <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border);">Filename / Title</th>
+              <th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); width: 110px;">Size / Duration</th>
+            </tr>
+          </thead>
+          <tbody id="folderModalTableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-clear" onclick="document.getElementById('folderModal').close()">Cancel</button>
+        <button id="folderModalConfirmBtn" class="btn" onclick="confirmStartFolderBatch()">
+          ⚡ Confirm &amp; Transcribe All Files Step-by-Step
+        </button>
+      </div>
+    </dialog>
 
     <footer style="text-align: center; margin-top: 14px; margin-bottom: 24px; color: var(--muted); font-size: 0.84rem; border-top: 1px solid var(--border); padding-top: 16px;">
       Universal Transcriber v0.1.0-beta • Engineered by <a href="https://github.com/seanbuilds" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">@seanbuilds</a> • Released under the MIT License
@@ -282,10 +1227,201 @@
       dropZone.addEventListener('drop', (e) => {
         const dt = e.dataTransfer;
         const files = dt.files;
-        if (files && files.length > 0) {
+        if (files && files.length > 1) {
+          handleFolderSelect(files);
+        } else if (files && files.length === 1) {
           handleFileSelect(files);
         }
       });
+    }
+
+    let pendingFolderFiles = [];
+    let pendingFolderName = "";
+    let pendingLocalFolderPath = "";
+
+    const SUPPORTED_EXTS = [".m4a", ".mp3", ".mp4", ".mov", ".mkv", ".wav", ".flac", ".aac", ".webm", ".ogg", ".opus"];
+
+    function handleFolderSelect(files) {
+      if (!files || files.length === 0) return;
+
+      const mediaFiles = Array.from(files).filter(f => {
+        const ext = "." + f.name.split('.').pop().toLowerCase();
+        return SUPPORTED_EXTS.includes(ext);
+      });
+
+      if (mediaFiles.length === 0) {
+        alert("No supported audio or video files found in the selected folder.\nSupported formats: " + SUPPORTED_EXTS.join(", "));
+        return;
+      }
+
+      let detectedFolderName = "Local_Folder_Batch";
+      if (mediaFiles[0].webkitRelativePath) {
+        const parts = mediaFiles[0].webkitRelativePath.split('/');
+        if (parts.length > 1 && parts[0]) {
+          detectedFolderName = parts[0];
+        }
+      }
+
+      pendingFolderFiles = mediaFiles;
+      pendingFolderName = detectedFolderName;
+      pendingLocalFolderPath = "";
+
+      showFolderModalForFiles(mediaFiles, detectedFolderName);
+    }
+
+    function showFolderModalForFiles(files, folderName) {
+      let totalBytes = 0;
+      files.forEach(f => totalBytes += f.size);
+      const sizeStr = (totalBytes / (1024 * 1024)).toFixed(1) + " MB";
+
+      document.getElementById("folderModalTitle").innerText = folderName;
+      document.getElementById("folderModalCount").innerText = files.length;
+      document.getElementById("folderModalAudio").innerText = `${files.length} media file(s) (${sizeStr})`;
+      document.getElementById("folderModalDir").innerText = `~/Documents/Transcripts/Playlists/YYYYMMDD_${folderName}`;
+
+      const tbody = document.getElementById("folderModalTableBody");
+      tbody.innerHTML = "";
+      files.forEach((f, idx) => {
+        const tr = document.createElement("tr");
+        const fSize = (f.size / (1024 * 1024)).toFixed(1) + " MB";
+        tr.innerHTML = `
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); color:var(--muted);">${idx + 1}</td>
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); font-weight:500;">${f.name}</td>
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); font-family:monospace; text-align:right; color:var(--accent);">${fSize}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const modal = document.getElementById("folderModal");
+      if (modal && typeof modal.showModal === "function") {
+        modal.showModal();
+      }
+    }
+
+    function showFolderConfirmModal(folderData, sourcePath) {
+      pendingFolderFiles = [];
+      pendingFolderName = folderData.title || "Local_Folder";
+      pendingLocalFolderPath = sourcePath;
+
+      document.getElementById("folderModalTitle").innerText = folderData.title || "Local Folder Batch";
+      document.getElementById("folderModalCount").innerText = folderData.item_count || 0;
+      document.getElementById("folderModalAudio").innerText = `${folderData.item_count} file(s) • ${folderData.total_duration_str || 'N/A'}`;
+      document.getElementById("folderModalDir").innerText = folderData.target_dir || "~/Documents/Transcripts/Playlists/";
+
+      const tbody = document.getElementById("folderModalTableBody");
+      tbody.innerHTML = "";
+      (folderData.items || []).forEach(it => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); color:var(--muted);">${it.index}</td>
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); font-weight:500;">${it.title || it.filename}</td>
+          <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); font-family:monospace; text-align:right; color:var(--accent);">${it.duration_str || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const modal = document.getElementById("folderModal");
+      if (modal && typeof modal.showModal === "function") {
+        modal.showModal();
+      }
+    }
+
+    async function confirmStartFolderBatch() {
+      const modal = document.getElementById("folderModal");
+      if (modal) modal.close();
+
+      const btn = document.getElementById("startBtn");
+      btn.disabled = true;
+
+      const playbook = document.getElementById("playbookSelect").value;
+      const clustering = document.getElementById("clusteringSelect").value;
+      const customName = document.getElementById("customNameInput").value.trim();
+
+      // Case 1: Direct system folder path
+      if (pendingLocalFolderPath) {
+        document.getElementById("statusText").innerText = "Staging local folder batch...";
+        try {
+          const resp = await fetch("/api/folder/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              folder_path: pendingLocalFolderPath,
+              playbook,
+              clustering,
+              custom_folder_name: customName || pendingFolderName || undefined,
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.error || "Failed to stage folder batch");
+
+          activateBatchTracker(data, pendingFolderName, pendingLocalFolderPath);
+        } catch (err) {
+          alert(`Failed to start folder batch: ${err.message}`);
+          btn.disabled = false;
+        }
+        return;
+      }
+
+      // Case 2: Uploaded files from folder picker
+      if (pendingFolderFiles && pendingFolderFiles.length > 0) {
+        const uploadDiv = document.getElementById("uploadStatus");
+        const promptDiv = document.getElementById("dropZonePrompt");
+        promptDiv.style.display = "none";
+        uploadDiv.style.display = "flex";
+        uploadDiv.innerHTML = `<span>⏳ Uploading ${pendingFolderFiles.length} files from folder <strong>${pendingFolderName}</strong>...</span>`;
+        document.getElementById("statusText").innerText = `Uploading ${pendingFolderFiles.length} files to server...`;
+
+        try {
+          const formData = new FormData();
+          formData.append("folder_name", customName || pendingFolderName);
+          formData.append("playbook", playbook);
+          formData.append("clustering", clustering);
+          for (let i = 0; i < pendingFolderFiles.length; i++) {
+            formData.append("files[]", pendingFolderFiles[i]);
+          }
+
+          const resp = await fetch("/api/folder/upload", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.error || "Failed to upload folder files");
+
+          uploadDiv.style.display = "none";
+          promptDiv.style.display = "block";
+
+          activateBatchTracker(data, pendingFolderName, "Uploaded Folder");
+        } catch (err) {
+          alert(`Failed to upload folder batch: ${err.message}`);
+          uploadDiv.innerHTML = `<span style="color:var(--danger)">❌ Upload error: ${err.message}</span>`;
+          promptDiv.style.display = "block";
+          btn.disabled = false;
+        }
+      }
+    }
+
+    function activateBatchTracker(data, title, sourceDisplay) {
+      activePlaylistDirName = data.playlist_id;
+      const trackerCard = document.getElementById("playlistTrackerCard");
+      trackerCard.style.display = "block";
+      trackerCard.scrollIntoView({ behavior: "smooth" });
+
+      document.getElementById("plTrackerHeader").innerText = "📁 Folder Batch Transcription Staging";
+      document.getElementById("plTrackerNotice").innerHTML = "<strong>Folder Staging Active:</strong> Dedicated collection folder created with master manifest and placeholder files. Transcribing files sequentially.";
+
+      document.getElementById("plTrackerTitle").innerText = title || "Folder Batch";
+      const plUrlEl = document.getElementById("plTrackerUrl");
+      plUrlEl.innerText = sourceDisplay || "-";
+      plUrlEl.href = (sourceDisplay && sourceDisplay.startsWith("http")) ? sourceDisplay : "#";
+      document.getElementById("plTrackerDir").innerText = data.playlist_dir;
+      document.getElementById("plMetricTotal").innerText = data.item_count;
+      document.getElementById("plMetricCompleted").innerText = "0";
+      document.getElementById("plMetricFailed").innerText = "0";
+      document.getElementById("plMetricPending").innerText = data.item_count;
+      document.getElementById("plProgressBar").style.width = "0%";
+
+      document.getElementById("statusText").innerText = `Staged ${data.item_count} files. Transcribing step-by-step...`;
+      startPlaylistPolling(activePlaylistDirName);
     }
 
     async function handleFileSelect(files) {
@@ -352,22 +1488,232 @@
         if (playbooks && playbooks.length > 0) {
           const currentVal = select.value;
           select.innerHTML = "";
-          playbooks.forEach(pb => {
+          // Sort 'general' to the very top as the default category
+          const sorted = [...playbooks].sort((a, b) => {
+            if (a.name === "general") return -1;
+            if (b.name === "general") return 1;
+            if (a.name === "general_speech") return -1;
+            if (b.name === "general_speech") return 1;
+            return a.name.localeCompare(b.name);
+          });
+          sorted.forEach(pb => {
             const opt = document.createElement("option");
             opt.value = pb.name;
             let icon = "📝";
-            if (pb.name.includes("gaming")) icon = "🎮";
-            else if (pb.name.includes("muni")) icon = "🏛️";
-            else if (pb.name.includes("interview")) icon = "🎙️";
-            else if (pb.name.includes("corp")) icon = "💼";
-            else if (pb.name.includes("academic")) icon = "🎓";
-            opt.innerText = `${icon} ${pb.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+            let label = pb.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            if (pb.name === "general") {
+              icon = "🌐";
+              label = "General (Default)";
+            } else if (pb.name === "general_speech") {
+              icon = "🗣️";
+              label = "General Speech";
+            } else if (pb.name.includes("gaming")) {
+              icon = "🎮";
+              label = "Gaming Videos & Esports";
+            } else if (pb.name.includes("muni")) {
+              icon = "🏛️";
+              label = "Municipal Meetings";
+            } else if (pb.name.includes("interview")) {
+              icon = "🎙️";
+              label = "Interview & Podcast";
+            } else if (pb.name.includes("corp")) {
+              icon = "💼";
+              label = "Corporate Meeting";
+            } else if (pb.name.includes("academic")) {
+              icon = "🎓";
+              label = "Academic Lecture";
+            }
+            opt.innerText = `${icon} ${label}`;
             select.appendChild(opt);
           });
-          select.value = currentVal || "gaming_videos";
+          select.value = (currentVal && select.querySelector(`option[value="${currentVal}"]`)) ? currentVal : "general";
         }
       } catch (err) {
         console.warn("Could not load remote playbooks, using defaults:", err);
+      }
+    }
+
+    let pendingPlaylistMeta = null;
+    let playlistTrackerInterval = null;
+    let activePlaylistDirName = null;
+
+    async function inspectAndConfirmPlaylist(source) {
+      const statusText = document.getElementById("statusText");
+      const btn = document.getElementById("startBtn");
+      btn.disabled = true;
+      statusText.innerText = "🔍 Inspecting YouTube playlist structure via yt-dlp...";
+
+      try {
+        const resp = await fetch("/api/playlist/inspect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: source })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Failed to inspect playlist");
+
+        pendingPlaylistMeta = data;
+        document.getElementById("plModalCount").innerText = data.item_count;
+        document.getElementById("plModalTitle").innerText = data.title;
+        document.getElementById("plModalUrl").innerText = data.url || source;
+        document.getElementById("plModalDuration").innerText = data.total_duration_str;
+        document.getElementById("plModalDir").innerText = data.target_dir;
+
+        const tbody = document.getElementById("plModalTableBody");
+        tbody.innerHTML = "";
+        (data.items || []).forEach(it => {
+          const itemUrl = it.url || `https://www.youtube.com/watch?v=${it.id || ''}`;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); color:var(--muted);">${it.index}</td>
+            <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); font-weight:500;">
+              <div>${it.title}</div>
+              <div style="font-size: 0.74rem; color: var(--muted); font-family: monospace; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px;">${itemUrl}</span>
+                <button class="btn btn-sm btn-clear" style="padding: 1px 5px; font-size: 0.68rem;" onclick="copyTextToClipboard('${itemUrl}', this, '✓')" title="Copy Video URL">📋</button>
+              </div>
+            </td>
+            <td style="padding: 5px 8px; border-bottom: 1px solid var(--border); text-align:right; font-family:monospace; color:var(--accent);">${it.duration_str}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        statusText.innerText = `Found playlist with ${data.item_count} videos. Awaiting confirmation.`;
+        btn.disabled = false;
+        const modal = document.getElementById("playlistModal");
+        if (typeof modal.showModal === "function") {
+          modal.showModal();
+        } else {
+          modal.setAttribute("open", "");
+        }
+      } catch (err) {
+        statusText.innerText = `Error inspecting playlist: ${err.message}`;
+        btn.disabled = false;
+        alert(`Failed to inspect playlist: ${err.message}`);
+      }
+    }
+
+    async function confirmStartPlaylist() {
+      if (!pendingPlaylistMeta) return;
+      const modal = document.getElementById("playlistModal");
+      if (typeof modal.close === "function") modal.close();
+      else modal.removeAttribute("open");
+
+      const playbook = document.getElementById("playbookSelect").value;
+      const clustering = document.getElementById("clusteringSelect").value;
+      const customName = document.getElementById("customNameInput").value.trim();
+
+      const btn = document.getElementById("startBtn");
+      btn.disabled = true;
+      const tracker = document.getElementById("playlistTrackerCard");
+      tracker.style.display = "block";
+      document.getElementById("statusText").innerText = `🚀 Staged playlist collection. Transcribing ${pendingPlaylistMeta.item_count} videos step-by-step...`;
+
+      try {
+        const resp = await fetch("/api/playlist/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: pendingPlaylistMeta.source_url,
+            playbook,
+            clustering,
+            custom_folder_name: customName || undefined
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Failed to start playlist");
+
+        activePlaylistDirName = data.playlist_id;
+        document.getElementById("plTrackerTitle").innerText = pendingPlaylistMeta.title || "YouTube Playlist";
+        const plUrlEl = document.getElementById("plTrackerUrl");
+        plUrlEl.innerText = pendingPlaylistMeta.source_url || "-";
+        plUrlEl.href = pendingPlaylistMeta.source_url || "#";
+        document.getElementById("plTrackerDir").innerText = data.playlist_dir;
+        document.getElementById("plMetricTotal").innerText = data.item_count;
+        document.getElementById("plMetricCompleted").innerText = "0";
+        document.getElementById("plMetricFailed").innerText = "0";
+        document.getElementById("plMetricPending").innerText = data.item_count;
+        document.getElementById("plProgressBar").style.width = "0%";
+
+
+        startPlaylistPolling(activePlaylistDirName);
+      } catch (err) {
+        alert(`Failed to stage playlist: ${err.message}`);
+        btn.disabled = false;
+      }
+    }
+
+    function startPlaylistPolling(dirName) {
+      if (playlistTrackerInterval) clearInterval(playlistTrackerInterval);
+      pollPlaylistStatus(dirName);
+      playlistTrackerInterval = setInterval(() => pollPlaylistStatus(dirName), 4000);
+    }
+
+    async function pollPlaylistStatus(dirName) {
+      if (!dirName) return;
+      try {
+        const resp = await fetch(`/api/playlist/${encodeURIComponent(dirName)}/status`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const m = data.manifest;
+        if (!m) return;
+
+        document.getElementById("plMetricTotal").innerText = m.item_count || 0;
+        document.getElementById("plMetricCompleted").innerText = m.completed_count || 0;
+        document.getElementById("plMetricFailed").innerText = m.failed_count || 0;
+        document.getElementById("plMetricPending").innerText = m.pending_count || 0;
+
+        const total = m.item_count || 1;
+        const done = (m.completed_count || 0) + (m.failed_count || 0);
+        const pct = Math.min(100, Math.round((done / total) * 100));
+        document.getElementById("plProgressBar").style.width = `${pct}%`;
+
+        const tbody = document.getElementById("plTrackerTableBody");
+        tbody.innerHTML = "";
+        (m.items || []).forEach(it => {
+          const tr = document.createElement("tr");
+          let badge = `<span class="pill pill-pending">Pending</span>`;
+          if (it.status === "COMPLETED") badge = `<span class="pill pill-completed">Completed</span>`;
+          else if (it.status === "FAILED") badge = `<span class="pill pill-failed">Failed</span>`;
+          else if (it.status === "IN_PROGRESS") badge = `<span class="pill pill-processing">Transcribing</span>`;
+
+          let outCol = `<span style="color:var(--muted)">-</span>`;
+          if (it.output_dir) {
+            const bname = it.output_dir.split("/").pop();
+            outCol = `<div style="display:flex; align-items:center; gap:6px;">
+              <span style="color:var(--accent); font-family:monospace; font-size:0.8rem;" title="${it.output_dir}">${bname}</span>
+              <button class="btn btn-sm btn-clear" style="padding:1px 5px; font-size:0.68rem;" onclick="copyTextToClipboard('${it.output_dir}', this, '✓')" title="Copy Local Folder Path">📋</button>
+              <button class="btn btn-sm btn-clear" style="padding:1px 5px; font-size:0.68rem;" onclick="openFolderByPath('${it.output_dir}', this)" title="Reveal in Finder">📂</button>
+            </div>`;
+          } else if (it.error_message) {
+            outCol = `<span style="color:var(--danger); font-size:0.78rem;">${it.error_message}</span>`;
+          }
+
+          tr.innerHTML = `
+            <td style="color:var(--muted);">${it.index}</td>
+            <td style="font-weight:500;">${it.title}</td>
+            <td style="font-family:monospace; color:var(--muted);">${it.duration_str}</td>
+            <td>${badge}</td>
+            <td>${outCol}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (m.status === "COMPLETED" || m.status === "COMPLETED_WITH_ERRORS") {
+          clearInterval(playlistTrackerInterval);
+          playlistTrackerInterval = null;
+          document.getElementById("statusText").innerText = `🎉 Playlist finished! ${m.completed_count} of ${m.item_count} videos transcribed.`;
+          document.getElementById("startBtn").disabled = false;
+          loadAuditSummary();
+        }
+      } catch (err) {
+        console.warn("Error polling playlist status:", err);
+      }
+    }
+
+    function refreshPlaylistTracker() {
+      if (activePlaylistDirName) {
+        pollPlaylistStatus(activePlaylistDirName);
       }
     }
 
@@ -376,7 +1722,31 @@
       const playbook = document.getElementById("playbookSelect").value;
       const clustering = document.getElementById("clusteringSelect").value;
       const customName = document.getElementById("customNameInput").value.trim();
-      if (!source) return alert("Please enter a YouTube URL, RSS feed, or local file path.");
+      if (!source) return alert("Mandatory media source missing: Please upload a file/folder (Option A) or enter a media URL / file path (Option B) to transcribe.");
+
+      // Check if source is a YouTube playlist
+      if (source.includes("list=") || source.includes("/playlist")) {
+        return inspectAndConfirmPlaylist(source);
+      }
+
+      // Check if source is a local folder path
+      if (!source.startsWith("http://") && !source.startsWith("https://")) {
+        try {
+          const chk = await fetch("/api/folder/inspect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder_path: source })
+          });
+          if (chk.ok) {
+            const folderData = await chk.json();
+            if (folderData.success && folderData.item_count > 0) {
+              return showFolderConfirmModal(folderData, source);
+            }
+          }
+        } catch (e) {
+          // not a folder or inspect failed, proceed to single file transcribe
+        }
+      }
 
       const btn = document.getElementById("startBtn");
       const progContainer = document.getElementById("progressContainer");
@@ -391,9 +1761,18 @@
       telemHeader.style.display = "flex";
       streamWin.style.display = "block";
       streamWin.innerHTML = "";
+
+      const streamHdr = document.getElementById("streamingHeaderBox");
+      if (streamHdr) {
+        streamHdr.style.display = "flex";
+        document.getElementById("streamMeetingTitle").innerText = customName || "Detecting title...";
+        document.getElementById("streamMediaUrl").innerText = source || "Local / Streaming";
+      }
+
       resultsCard.style.display = "none";
       progBar.style.width = "5%";
       statusText.innerText = "Connecting to streaming telemetry...";
+
 
       try {
         const resp = await fetch("/api/transcribe", {
@@ -430,6 +1809,15 @@
         clearInterval(pollInterval);
         pollInterval = null;
       }
+      if (playlistTrackerInterval) {
+        clearInterval(playlistTrackerInterval);
+        playlistTrackerInterval = null;
+      }
+      const modal = document.getElementById("playlistModal");
+      if (modal && typeof modal.close === "function") {
+        try { modal.close(); } catch(e) {}
+      }
+      document.getElementById("playlistTrackerCard").style.display = "none";
       if (activeJobId) {
         fetch(`/api/jobs/${activeJobId}/cancel`, {
           method: "POST",
@@ -441,7 +1829,12 @@
 
       document.getElementById("sourceInput").value = "";
       document.getElementById("customNameInput").value = "";
-      document.getElementById("playbookSelect").selectedIndex = 0;
+      const pbSelect = document.getElementById("playbookSelect");
+      if (pbSelect && pbSelect.querySelector('option[value="general"]')) {
+        pbSelect.value = "general";
+      } else if (pbSelect) {
+        pbSelect.selectedIndex = 0;
+      }
       document.getElementById("clusteringSelect").selectedIndex = 0;
 
       const fileInput = document.getElementById("fileInput");
@@ -466,7 +1859,10 @@
       telemHeader.style.display = "none";
       streamWin.style.display = "none";
       streamWin.innerHTML = "";
+      const streamHdr = document.getElementById("streamingHeaderBox");
+      if (streamHdr) streamHdr.style.display = "none";
       resultsCard.style.display = "none";
+
       statusText.innerText = "Cleared all fields. Ready for new transcription.";
       startBtn.disabled = false;
       currentResult = null;
@@ -603,8 +1999,33 @@
 
     async function renderResult(data) {
       document.getElementById("resultsCard").style.display = "block";
+      const isoName = data.iso_name || (data.export_dir ? data.export_dir.split('/').pop() : 'Generated');
       const isoTag = document.getElementById("isoTag");
-      isoTag.innerHTML = `<strong>ISO Identifier:</strong> ${data.iso_name || (data.export_dir ? data.export_dir.split('/').pop() : 'Generated')}`;
+      isoTag.innerHTML = `<strong>ISO Identifier:</strong> ${isoName}`;
+
+      const meetingName = data.meeting_name || data.title || data.custom_name || (data.metadata && data.metadata.title) || isoName;
+      const sourceUrl = data.source || (data.metadata && data.metadata.source) || (data.metadata && data.metadata.url) || '';
+      const folderName = data.iso_output_dir || data.export_dir || isoName;
+      const durationStr = data.duration_str || (data.metadata && data.metadata.duration_str) || (data.duration ? `${Math.round(data.duration)}s` : 'N/A');
+      const playbookStr = data.playbook || 'general_speech';
+
+      // Update Results Info Box
+      document.getElementById("resMeetingName").innerText = meetingName;
+      const resSourceUrlEl = document.getElementById("resSourceUrl");
+      resSourceUrlEl.innerText = sourceUrl || 'N/A';
+      resSourceUrlEl.setAttribute("data-raw-url", sourceUrl);
+      if (sourceUrl && (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://"))) {
+        resSourceUrlEl.href = sourceUrl;
+      } else {
+        resSourceUrlEl.removeAttribute("href");
+      }
+      document.getElementById("resFolder").innerText = folderName;
+      document.getElementById("resDuration").innerText = durationStr;
+      document.getElementById("resPlaybook").innerText = playbookStr;
+
+      // Update Transcript Box Header
+      document.getElementById("boxMeetingName").innerText = meetingName;
+      document.getElementById("boxSourceUrl").innerText = sourceUrl || 'N/A';
 
       if (data.job_id) {
         fetch(`/api/audit/${data.job_id}/used`, {
@@ -625,6 +2046,18 @@
       document.getElementById("downloadVtt").href = `/api/file?path=${encodeURIComponent(data.files.vtt)}&download=1&job_id=${jId}`;
       document.getElementById("downloadDocx").href = `/api/file?path=${encodeURIComponent(data.files.docx)}&download=1&job_id=${jId}`;
       document.getElementById("downloadJson").href = `/api/file?path=${encodeURIComponent(data.files.json)}&download=1&job_id=${jId}`;
+
+      // Populate Dedicated Local Folder & Files Display
+      const targetFolder = data.iso_output_dir || data.export_dir || '';
+      document.getElementById("localFolderDisplay").innerText = targetFolder || 'N/A';
+      if (data.files) {
+        document.getElementById("fileDisplayMd").innerText = data.files.md || 'N/A';
+        document.getElementById("fileDisplayTxt").innerText = data.files.txt || 'N/A';
+        document.getElementById("fileDisplaySrt").innerText = data.files.srt || 'N/A';
+        document.getElementById("fileDisplayVtt").innerText = data.files.vtt || 'N/A';
+        document.getElementById("fileDisplayDocx").innerText = data.files.docx || 'N/A';
+        document.getElementById("fileDisplayJson").innerText = data.files.json || 'N/A';
+      }
     }
 
     async function showTab(fmt) {
@@ -651,7 +2084,7 @@
 
         const tbody = document.getElementById("auditTableBody");
         if (!data.entries || data.entries.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted); text-align:center; padding:16px;">No transcriptions logged yet.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" style="color:var(--muted); text-align:center; padding:16px;">No transcriptions logged yet.</td></tr>`;
           return;
         }
 
@@ -666,19 +2099,39 @@
 
           const createdTime = item.created_at ? item.created_at.substring(0, 19).replace('T', ' ') : 'N/A';
           const titleDisplay = item.custom_name || (item.export_dir ? item.export_dir.split('/').pop() : '(Default)');
+          const titleSnippet = titleDisplay.length > 20 ? titleDisplay.substring(0, 18) + '…' : titleDisplay;
           const usedStatus = item.used_flag === 1 ? '✅ Used' : '⏳ Unused';
+          const srcVal = item.source || '-';
+          const isUrl = srcVal.startsWith('http://') || srcVal.startsWith('https://');
+          const srcSnippet = srcVal.length > 22 ? srcVal.substring(0, 20) + '…' : srcVal;
+          const srcDisplay = isUrl
+            ? `<a href="${srcVal}" target="_blank" title="${srcVal}" style="color:var(--accent); text-decoration:underline; font-family:monospace; font-size:0.78rem;">${srcSnippet}</a>`
+            : `<span title="${srcVal}" style="font-family:monospace; font-size:0.78rem; color:var(--muted);">${srcSnippet}</span>`;
 
           tr.className = item.status === "COMPLETED" ? "audit-row-clickable" : "";
           tr.style.cursor = item.status === "COMPLETED" ? "pointer" : "default";
 
           tr.innerHTML = `
             <td><code>${item.job_id}</code></td>
-            <td style="font-family:monospace; font-size:0.8rem; color:var(--muted);">${createdTime}</td>
+            <td style="font-family:monospace; font-size:0.78rem; color:var(--muted);">${createdTime}</td>
             <td><span class="pill ${pillClass}">${item.status}</span></td>
             <td>${item.playbook}</td>
-            <td style="font-weight:600; color:#cbd5e1;">${titleDisplay}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:600; color:#cbd5e1;" title="${titleDisplay}">${titleSnippet}</span>
+                <button class="btn btn-sm btn-clear" style="padding:1px 6px; font-size:0.72rem;" onclick="event.stopPropagation(); copyTextToClipboard('${titleDisplay.replace(/'/g, "\\'")}', this, '✓')">📋</button>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                ${srcDisplay}
+                ${srcVal !== '-' ? `<button class="btn btn-sm btn-clear" style="padding:1px 6px; font-size:0.72rem;" onclick="event.stopPropagation(); copyTextToClipboard('${srcVal.replace(/'/g, "\\'")}', this, '✓')">📋</button>` : ''}
+              </div>
+            </td>
             <td>${usedStatus}</td>
-            <td>${item.status === "COMPLETED" ? '<button class="btn btn-sm" onclick="loadJobFromAudit(\'' + item.job_id + '\')">View</button>' : '-'}</td>
+            <td>
+              ${item.status === "COMPLETED" ? '<button class="btn btn-sm" onclick="loadJobFromAudit(\'' + item.job_id + '\')">View</button>' : '-'}
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -686,6 +2139,264 @@
         console.warn("Error loading audit history:", err);
       }
     }
+
+    /* Clipboard Copy Commands & Helpers */
+    function copyTextToClipboard(text, btnElement, successLabel = "✓ Copied!") {
+      if (!text) return;
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        navigator.clipboard.writeText(text).then(() => {
+          showCopySuccess(btnElement, successLabel);
+        }).catch(() => {
+          fallbackCopyText(text, btnElement, successLabel);
+        });
+      } else {
+        fallbackCopyText(text, btnElement, successLabel);
+      }
+    }
+
+    function fallbackCopyText(text, btnElement, successLabel) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showCopySuccess(btnElement, successLabel);
+      } catch (e) {
+        console.warn("Fallback copy failed:", e);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function showCopySuccess(btnElement, successLabel) {
+      if (!btnElement) return;
+      const orig = btnElement.innerText;
+      btnElement.innerText = successLabel;
+      const origBorder = btnElement.style.borderColor;
+      const origColor = btnElement.style.color;
+      btnElement.style.borderColor = "var(--success)";
+      btnElement.style.color = "var(--success)";
+      setTimeout(() => {
+        btnElement.innerText = orig;
+        btnElement.style.borderColor = origBorder;
+        btnElement.style.color = origColor;
+      }, 1800);
+    }
+
+    function copyInputUrl(btn) {
+      const url = document.getElementById("sourceInput").value.trim();
+      if (!url) return alert("Source URL/path box is empty.");
+      copyTextToClipboard(url, btn, "✓ URL Copied!");
+    }
+
+    function copyInputName(btn) {
+      const name = document.getElementById("customNameInput").value.trim();
+      if (!name) return alert("Custom name box is empty.");
+      copyTextToClipboard(name, btn, "✓ Name Copied!");
+    }
+
+    function copyCliCommandFromInputs(btn) {
+      const src = document.getElementById("sourceInput").value.trim() || "<URL_OR_PATH>";
+      const name = document.getElementById("customNameInput").value.trim();
+      const pb = document.getElementById("playbookSelect").value;
+      let cmd = `python3 cli.py transcribe "${src}" --playbook ${pb}`;
+      if (name) cmd += ` --name "${name}"`;
+      copyTextToClipboard(cmd, btn, "✓ Command Copied!");
+    }
+
+    function copyStreamingWindowText(btn) {
+      const title = document.getElementById("streamMeetingTitle").innerText;
+      const url = document.getElementById("streamMediaUrl").innerText;
+      const content = document.getElementById("streamingWindow").innerText;
+      const full = `Meeting: ${title}\nURL: ${url}\n\n${content}`;
+      copyTextToClipboard(full, btn, "✓ Stream Copied!");
+    }
+
+    function copyMeetingName(btn) {
+      const name = document.getElementById("resMeetingName").innerText;
+      copyTextToClipboard(name, btn, "✓ Name Copied!");
+    }
+
+    function copySourceUrl(btn) {
+      const url = document.getElementById("resSourceUrl").getAttribute("data-raw-url") || document.getElementById("resSourceUrl").innerText;
+      copyTextToClipboard(url, btn, "✓ URL Copied!");
+    }
+
+    function copyActiveTranscript(btn) {
+      const text = document.getElementById("transcriptView").innerText;
+      copyTextToClipboard(text, btn, "✓ Transcript Copied!");
+    }
+
+    function copyAllInfo(btn) {
+      const name = document.getElementById("resMeetingName").innerText;
+      const url = document.getElementById("resSourceUrl").getAttribute("data-raw-url") || document.getElementById("resSourceUrl").innerText;
+      const folder = document.getElementById("resFolder").innerText;
+      const duration = document.getElementById("resDuration").innerText;
+      const playbook = document.getElementById("resPlaybook").innerText;
+      const transcript = document.getElementById("transcriptView").innerText;
+
+      const payload = [
+        "================================================================================",
+        `Meeting / Transcript Name: ${name}`,
+        `YouTube / Source URL:     ${url}`,
+        `Folder / ISO Identifier:  ${folder}`,
+        `Audio Duration:           ${duration}`,
+        `Domain Playbook:          ${playbook}`,
+        "================================================================================",
+        "",
+        "--- VERBATIM TRANSCRIPT ---",
+        transcript
+      ].join("\n");
+
+      copyTextToClipboard(payload, btn, "✓ All Info Copied!");
+    }
+
+    function copyCliCommandFromResult(btn) {
+      if (!currentResult) return;
+      const url = currentResult.source || (currentResult.metadata && currentResult.metadata.source) || "<SOURCE>";
+      const name = currentResult.meeting_name || currentResult.title || currentResult.custom_name || "";
+      const pb = currentResult.playbook || "general_speech";
+      let cmd = `python3 cli.py transcribe "${url}" --playbook ${pb}`;
+      if (name) cmd += ` --name "${name}"`;
+      copyTextToClipboard(cmd, btn, "✓ Command Copied!");
+    }
+
+    function populateInputsFromResult(btn) {
+      if (!currentResult) return;
+      const url = currentResult.source || (currentResult.metadata && currentResult.metadata.source) || "";
+      const name = currentResult.meeting_name || currentResult.title || currentResult.custom_name || "";
+      if (url) document.getElementById("sourceInput").value = url;
+      if (name) document.getElementById("customNameInput").value = name;
+      showCopySuccess(btn, "✓ Copied into Boxes!");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function copyPlaylistUrl(btn) {
+      const url = document.getElementById("plTrackerUrl").href || document.getElementById("plTrackerUrl").innerText;
+      copyTextToClipboard(url, btn, "✓ Playlist URL Copied!");
+    }
+
+    function copyPlaylistAllInfo(btn) {
+      const title = document.getElementById("plTrackerTitle").innerText;
+      const url = document.getElementById("plTrackerUrl").href || document.getElementById("plTrackerUrl").innerText;
+      const dir = document.getElementById("plTrackerDir").innerText;
+      const total = document.getElementById("plMetricTotal").innerText;
+      const completed = document.getElementById("plMetricCompleted").innerText;
+      const failed = document.getElementById("plMetricFailed").innerText;
+      const pending = document.getElementById("plMetricPending").innerText;
+
+      const payload = [
+        "================================================================================",
+        `Playlist / Meeting Series: ${title}`,
+        `YouTube Playlist URL:      ${url}`,
+        `Collection Folder:         ${dir}`,
+        `Total Videos:              ${total} (Completed: ${completed}, Failed: ${failed}, Pending: ${pending})`,
+        "================================================================================"
+      ].join("\n");
+
+      copyTextToClipboard(payload, btn, "✓ Playlist Info Copied!");
+    }
+
+    function copyPlModalName(btn) {
+      const name = document.getElementById("plModalTitle").innerText;
+      copyTextToClipboard(name, btn, "✓ Name Copied!");
+    }
+
+    function copyPlModalUrl(btn) {
+      const url = document.getElementById("plModalUrl").innerText;
+      copyTextToClipboard(url, btn, "✓ URL Copied!");
+    }
+
+    function copyPlModalDir(btn) {
+      const dir = document.getElementById("plModalDir").innerText;
+      copyTextToClipboard(dir, btn, "✓ Path Copied!");
+    }
+
+    async function openCurrentLocalFolder(btn) {
+      if (!currentResult) return;
+      const folder = currentResult.iso_output_dir || currentResult.export_dir;
+      await openFolderByPath(folder, btn);
+    }
+
+    async function openFolderByPath(folderPath, btn) {
+      if (!folderPath) return;
+      try {
+        const resp = await fetch("/api/open-folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: folderPath })
+        });
+        const res = await resp.json();
+        if (!resp.ok) throw new Error(res.error || "Failed to open folder");
+        showCopySuccess(btn, "✓ Opened Finder!");
+      } catch (err) {
+        showCopySuccess(btn, `⚠️ ${err.message}`);
+      }
+    }
+
+    function copyCurrentLocalFolder(btn) {
+      if (!currentResult) return;
+      const folder = currentResult.iso_output_dir || currentResult.export_dir;
+      copyTextToClipboard(folder, btn, "✓ Folder Path Copied!");
+    }
+
+    function copySingleFilePath(type, btn) {
+      if (!currentResult || !currentResult.files || !currentResult.files[type]) return;
+      copyTextToClipboard(currentResult.files[type], btn, "✓ Path Copied!");
+    }
+
+    function promptClearHistory() {
+      const modal = document.getElementById("clearHistoryModal");
+      if (modal && typeof modal.showModal === "function") {
+        modal.showModal();
+      } else if (confirm("Are you sure you want to clear transcription history from the UI? Your folders and export files on disk will NOT be removed.")) {
+        confirmClearHistory();
+      }
+    }
+
+    async function confirmClearHistory() {
+      const btn = document.getElementById("confirmClearHistoryBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Clearing...";
+      }
+      try {
+        const resp = await fetch("/api/audit/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          const modal = document.getElementById("clearHistoryModal");
+          if (modal && modal.open) {
+            modal.close();
+          }
+
+          // Reset audit counters and table display immediately
+          document.getElementById("metricTotal").innerText = "0";
+          document.getElementById("metricCompleted").innerText = "0";
+          document.getElementById("metricFailed").innerText = "0";
+          document.getElementById("metricCancelled").innerText = "0";
+          document.getElementById("metricUnused").innerText = "0";
+          document.getElementById("auditTableBody").innerHTML = '<tr><td colspan="7" style="color:var(--muted); text-align:center; padding:16px;">No transcriptions logged yet. History cleared.</td></tr>';
+
+          // Clear active result / views if displayed
+          clearEverything();
+        } else {
+          alert(`Failed to clear history: ${data.error || 'Unknown error'}`);
+        }
+      } catch (err) {
+        alert(`Error clearing history: ${err.message}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Yes, Clear History";
+        }
+      }
+    }
   </script>
 </body>
 </html>
+

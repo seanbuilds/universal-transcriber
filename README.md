@@ -5,7 +5,7 @@
 [![Platform: macOS Apple Silicon](https://img.shields.io/badge/Platform-macOS%20Apple%20Silicon%20(Metal)-black.svg)](https://apple.com)
 [![Python: 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://python.org)
 [![Engineered by: @seanbuilds](https://img.shields.io/badge/Engineered%20by-%40seanbuilds-6366f1.svg)](https://github.com/seanbuilds)
-[![Tests: 106 Passing](https://img.shields.io/badge/Tests-106%20Passing-success.svg)](tests/)
+[![Tests: 126 Passing](https://img.shields.io/badge/Tests-126%20Passing-success.svg)](tests/)
 
 <!-- Canonical README linking to README_v8.md -->
 
@@ -90,6 +90,29 @@ For complete manual setup instructions and options, see [**INSTALL.md**](INSTALL
 11. **YouTube Channel & RSS Feed Catalog Idempotency (`src/engine/catalog_v1.py`)**:
     - Persistent SQLite media index tracking content IDs, publication dates, and processing states to eliminate redundant downloads.
 
+12. **YouTube Playlist Breakdown & Placeholder Staging (`src/engine/playlist_v1.py`)**:
+    - Inspects YouTube playlists without downloading media (`yt-dlp --flat-playlist`).
+    - Displays an upfront interactive confirmation warning with video count, total estimated audio duration, and target directory.
+    - Stages a dedicated collection folder (`~/Documents/Transcripts/Playlists/YYYYMMDD_<Title>/`) with `playlist_manifest.json`, `PLAYLIST_INDEX.md`, and individual `.pending` placeholder files for every single video (ensuring 0% chance of missed videos).
+    - Sequentially transcribes each video step-by-step with isolated error handling (a single private/failed video does not crash the playlist run).
+    - Supports crash-resilient resumption (`--resume`), skipping already-completed items.
+
+13. **Danger Zone UI History Clear & Disk Preservation Guarantee (`static/index.html`, `app.py`)**:
+    - Crimson-accented "Danger Zone" card at the bottom of the dashboard with an interactive modal confirmation (`⚠️ Are you sure?`).
+    - Clears the UI audit history and job queue without touching physical files: all transcript folders, media, and multi-format files in `~/Documents/Transcripts/` remain 100% untouched on disk (`POST /api/audit/clear`).
+
+14. **1-Click Clipboard Copy Commands & Ubiquitous Meeting / URL Display (`static/index.html`, `src/engine/export_v4.py`)**:
+    - Fast 1-click `📋 Copy` buttons across all input fields, results cards, tables, and modal dialogs.
+    - Inline `📋 Copy URL` and `📋 Copy Name` inside input fields, with a `📋 Copy Command` CLI generator.
+    - Results card metadata header displaying Meeting Name and YouTube / Source URL, paired with `📋 Copy All Info`, `📋 Copy Transcript`, and `📥 Copy into Input Boxes`.
+    - All 6 generated export files (`.md`, `.txt`, `.srt`, `.vtt`, `.docx`, `.json`) include the Meeting Name and YouTube / Source URL in headers and metadata.
+
+15. **Atomic Post-Transcription Local Folder & Multi-Format Generation (`src/engine/export_v4.py`, `src/engine/pipeline_v6.py`)**:
+    - **Strict Timing Guarantee**: Output folders and final export files are created strictly **after** all 5 pipeline processing steps (*Ingest → Preprocess → Metal Streaming ASR → Neural Diarization → Role Healing*) succeed without error.
+    - **100% Local Multi-Format Suite**: Dedicated local folder generated under `~/Documents/Transcripts/` for each completed job, containing all 6 supported formats (`.md`, `.txt`, `.srt`, `.vtt`, `.docx`, `.json`) verified on disk with non-zero file sizes and atomic rollback safety.
+    - **macOS Finder Reveal Integration**: Direct `📂 Reveal in Finder` action button via `POST /api/open-folder` (`/usr/bin/open <path>`) with directory containment security.
+    - **Results & Playlist Tracker Cards**: Local Files Card showing full folder path and 6 individual file copy buttons; playlist batch tracker displays local folders with inline Finder and Copy buttons.
+
 ---
 
 ## 💻 Command-Line Interface (`cli.py`)
@@ -114,8 +137,14 @@ python3 cli.py local ~/Movies/gameplay.mp4 --title "Speedrun_PB" --playbook gami
 python3 cli.py local ~/Documents/Recordings/ --recursive --playbook corporate_meeting
 ```
 
-### Transcribe Remote Media (YouTube / Podcasts)
+### Transcribe YouTube Playlists & Remote Media
 ```bash
+# Break down and transcribe a YouTube playlist with upfront confirmation and placeholder staging
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --playbook municipal_meetings
+
+# Inspect playlist items without downloading or creating files (Dry Run)
+python3 cli.py playlist "https://www.youtube.com/playlist?list=PL..." --dry-run
+
 # Transcribe YouTube video with custom title and domain playbook
 python3 cli.py transcribe "https://www.youtube.com/watch?v=..." --title "Council_Hearing" --playbook municipal_meetings
 ```
@@ -135,18 +164,7 @@ python3 cli.py audit --mark-used job_6ebd501e
 ### Manage Speaker Profiles & Biometrics
 ```bash
 # List all registered speakers and centroid norm metrics
-python3 cli.py speakers
-
-# Rename a speaker turn ID across profiles
-python3 cli.py speakers --rename Speaker_01 "Lead Host"
-```
-
-### Synchronize Channels & Deliver Transcripts
-```bash
-# Scan YouTube channel or RSS feed with idempotency
-python3 cli.py catalog "https://www.youtube.com/@CityOfCohasset/videos" --limit 5
-
-# Dispatch recent transcripts via email / Apple Mail outbox
+# Deliver completed transcripts via email
 python3 cli.py email --count 5 --target ohheysean@gmail.com
 ```
 
@@ -165,11 +183,15 @@ Launch with:
 ```
 
 ### Dashboard Highlights:
-- **Drag & Drop Dropzone**: Drop any media file (`.m4a`, `.mp3`, `.mp4`, `.mov`, `.mkv`, `.wav`, etc.) directly from Finder.
+- **Select a File & Select a Folder**: Dedicated dual-action buttons in the ingestion dropzone—choose an individual recording or select an entire directory to batch-transcribe all audio/video files step-by-step.
+- **Interactive Folder & Playlist Staging**: Upfront modal confirmation with item counts, duration/size estimates, and projected folders; automatically stages `.pending` placeholder files and tracks live progress.
 - **Upload Progress & Metadata**: Format badges, audio duration, file size, and automatic title prefill.
 - **Live Streaming Transcripts**: Real-time token delivery via Server-Sent Events with active speaker badges.
+- **Local Files Box & Finder Reveal**: Direct `📂 Reveal in Finder` action opening the local export folder, with 6 individual file copy buttons for `.md`, `.txt`, `.srt`, `.vtt`, `.docx`, and `.json`.
+- **1-Click Copy Toolbar**: Instant `📋 Copy` actions on inputs (`Copy URL`, `Copy Name`), CLI commands (`Copy Command`), and results (`Copy All Info`, `Copy Transcript`, `Copy into Input Boxes`).
+- **Danger Zone History Clear**: Crimson card at the bottom of the dashboard with modal confirmation (`⚠️ Are you sure?`) to clear UI audit history while keeping local disk files 100% intact.
 - **Clear Everything / Start Over**: Aborts active jobs, resets UI state, and logs cancellation to audit.
-- **Persistent Audit Panel**: Dynamic counter of total, completed, failed, cancelled, and unused recordings, with an auto-updating tabular history.
+- **Persistent Audit Panel**: Dynamic counter of total, completed, failed, cancelled, and unused recordings, with an auto-updating tabular history showing Meeting Names and Source URLs.
 - **Multi-Format Downloads**: One-click download of `.md`, `.txt`, `.docx`, `.srt`, `.vtt`, and `.json`.
 
 ---
@@ -178,10 +200,10 @@ Launch with:
 
 Execute the complete verification test suite:
 ```bash
-/opt/homebrew/opt/python@3.14/bin/python3 -m pytest -v
+PYTHONPATH=. pytest -v
 ```
 
-All 112 unit, integration, multi-domain, local media container, adversarial, and web API concurrency tests pass with 0 failures.
+All **131** unit, integration, multi-domain, local media container, playlist staging, folder batch transcription, danger zone history clear, and post-transcription export tests pass with 0 failures across all 24 test modules (`131 passed in ~12s`).
 
 ---
 

@@ -165,6 +165,14 @@ def test_persistent_audit_logging(temp_env):
     assert "JOB_COMPLETED" in event_types
     assert "JOB_MARKED_USED" in event_types
 
+    # 8. Clear Audit History
+    cleared = logger.clear_audit_history(clear_jsonl=True)
+    assert cleared == 3
+    assert logger.get_audit_summary()["total_transcriptions_logged"] == 0
+    assert len(logger.list_audit_entries()) == 0
+    assert jsonl_path.read_text(encoding="utf-8") == ""
+
+
 
 def test_export_v4_iso_files_generation(temp_env):
     """Verify Export v4 atomically generates all 6 formats with ISO-8601 prefix."""

@@ -1,0 +1,8 @@
+{
+  "name": "general",
+  "version": "v1",
+  "description": "General domain-agnostic audio transcription, meetings, and conversation",
+  "default_role": "Speaker",
+  "roles": ["Speaker"],
+  "cues": {}
+}
